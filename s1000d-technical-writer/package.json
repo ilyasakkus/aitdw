@@ -1,12 +1,16 @@
 {
   "name": "s1000d-technical-writer",
   "version": "1.0.0",
-  "description": "",
+  "description": "A web-based technical document writer following S1000D standard",
   "main": "index.js",
   "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["s1000d", "technical-writer", "xml", "documentation"],
   "author": "",
   "license": "ISC",
   "dependencies": {
