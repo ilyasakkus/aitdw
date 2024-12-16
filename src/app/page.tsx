@@ -1,81 +1,60 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-import { useState } from 'react';
-import XMLPreview from '@/components/Preview/XMLPreview';
-import TemplateSelector from '@/components/Templates/TemplateSelector';
-import { exportToHTML, downloadAsFile } from '@/lib/export';
-
-const XMLEditor = dynamic(() => import('@/components/Editor/XMLEditor'), {
-  ssr: false,
-});
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import UserManagement from '@/components/Admin/UserManagement';
 
 export default function Home() {
-  const [xml, setXml] = useState<string>('');
-  const [previewType, setPreviewType] = useState<'pdf' | 'xml'>('pdf');
+  const { user, profile, loading } = useAuth();
+  const router = useRouter();
 
-  const handleExport = async (format: 'html' | 'pdf') => {
-    try {
-      if (format === 'html') {
-        const html = exportToHTML(xml);
-        downloadAsFile(html, 'document.html', 'text/html');
-      }
-      // PDF export can be added later using a library like jsPDF or html2pdf
-    } catch (error) {
-      console.error('Export failed:', error);
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth/login');
     }
-  };
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (!user || !profile) {
+    return null; // Will redirect in useEffect
+  }
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Header */}
-      <header className="flex items-center justify-between p-4 border-b">
-        <h1 className="text-2xl font-bold">S1000D Technical Writer</h1>
-        <div className="flex items-center gap-4">
-          <TemplateSelector onSelect={setXml} />
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPreviewType('pdf')}
-              className={`px-3 py-1 rounded ${
-                previewType === 'pdf' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-              }`}
-            >
-              PDF
-            </button>
-            <button
-              onClick={() => setPreviewType('xml')}
-              className={`px-3 py-1 rounded ${
-                previewType === 'xml' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-              }`}
-            >
-              XML
-            </button>
+    <div className="min-h-screen bg-gray-100">
+      <nav className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex">
+              <div className="flex-shrink-0 flex items-center">
+                <h1 className="text-2xl font-bold text-indigo-600">AITDW Admin</h1>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <span className="text-gray-700 mr-4">{profile.username}</span>
+              <button
+                onClick={() => useAuth().signOut()}
+                className="bg-indigo-600 px-4 py-2 text-white rounded-md hover:bg-indigo-700"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => handleExport('html')}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Export
-          </button>
         </div>
-      </header>
+      </nav>
 
-      {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Editor Panel */}
-        <div className="w-1/2 border-r">
-          <XMLEditor value={xml} onChange={setXml} />
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
+          <UserManagement />
         </div>
-
-        {/* Preview Panel */}
-        <div className="w-1/2 overflow-auto bg-gray-50">
-          <XMLPreview 
-            xml={xml} 
-            previewType={previewType}
-            className="h-full"
-          />
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
