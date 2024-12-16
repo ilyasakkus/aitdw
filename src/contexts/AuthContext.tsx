@@ -5,51 +5,27 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-type UserRole = 'admin' | 'user';
-
-interface UserProfile {
-  id: string;
-  user_id: string;
-  role: UserRole;
-  email: string;
-}
-
 interface AuthContextType {
   user: User | null;
-  profile: UserProfile | null;
   loading: boolean;
+  profile: { role: string } | null;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  profile: null,
   loading: true,
+  profile: null,
   signIn: async () => {},
   signOut: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<{ role: string } | null>(null);
   const router = useRouter();
-
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-
-    if (error) {
-      console.error('Error fetching profile:', error);
-      return null;
-    }
-
-    return data;
-  };
 
   useEffect(() => {
     const initAuth = async () => {
@@ -58,8 +34,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (session?.user) {
           setUser(session.user);
-          const profile = await fetchProfile(session.user.id);
-          if (profile) setProfile(profile);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -73,11 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser(session.user);
-        const profile = await fetchProfile(session.user.id);
-        if (profile) setProfile(profile);
       } else {
         setUser(null);
-        setProfile(null);
       }
     });
 
@@ -95,20 +66,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
 
     if (data.user) {
-      const profile = await fetchProfile(data.user.id);
-      if (profile) {
-        router.replace(profile.role === 'admin' ? '/admin' : '/documents');
-      }
+      router.push('/documents');
     }
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    router.replace('/auth/login');
+    router.push('/auth/login');
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, profile, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

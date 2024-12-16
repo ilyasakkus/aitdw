@@ -5,14 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function AdminPage() {
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && (!user || profile?.role !== 'admin')) {
+    if (!loading && !user) {
       router.replace('/auth/login');
     }
-  }, [loading, user, profile, router]);
+  }, [loading, user, router]);
 
   if (loading) {
     return (
@@ -29,15 +29,6 @@ export default function AdminPage() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold">Admin Dashboard</h1>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-4">{profile?.email}</span>
-              <button
-                onClick={() => signOut()}
-                className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
-              >
-                Çıkış Yap
-              </button>
             </div>
           </div>
         </div>
