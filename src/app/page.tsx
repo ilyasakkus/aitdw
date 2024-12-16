@@ -12,6 +12,7 @@ const XMLEditor = dynamic(() => import('@/components/Editor/XMLEditor'), {
 
 export default function Home() {
   const [xml, setXml] = useState<string>('');
+  const [previewType, setPreviewType] = useState<'pdf' | 'xml'>('pdf');
 
   const handleExport = async (format: 'html' | 'pdf') => {
     try {
@@ -26,27 +27,55 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen p-4">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold mb-4">S1000D Technical Writer</h1>
-        <TemplateSelector onSelect={setXml} />
-        <div className="flex gap-2 mb-4">
+    <div className="flex flex-col h-screen">
+      {/* Header */}
+      <header className="flex items-center justify-between p-4 border-b">
+        <h1 className="text-2xl font-bold">S1000D Technical Writer</h1>
+        <div className="flex items-center gap-4">
+          <TemplateSelector onSelect={setXml} />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPreviewType('pdf')}
+              className={`px-3 py-1 rounded ${
+                previewType === 'pdf' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+              }`}
+            >
+              PDF
+            </button>
+            <button
+              onClick={() => setPreviewType('xml')}
+              className={`px-3 py-1 rounded ${
+                previewType === 'xml' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+              }`}
+            >
+              XML
+            </button>
+          </div>
           <button
             onClick={() => handleExport('html')}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            Export HTML
+            Export
           </button>
         </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="h-[600px]">
+      </header>
+
+      {/* Main Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Editor Panel */}
+        <div className="w-1/2 border-r">
           <XMLEditor value={xml} onChange={setXml} />
         </div>
-        <div className="h-[600px]">
-          <XMLPreview xml={xml} />
+
+        {/* Preview Panel */}
+        <div className="w-1/2 overflow-auto bg-gray-50">
+          <XMLPreview 
+            xml={xml} 
+            previewType={previewType}
+            className="h-full"
+          />
         </div>
       </div>
-    </main>
+    </div>
   );
 }
