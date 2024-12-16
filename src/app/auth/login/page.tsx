@@ -9,32 +9,25 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, user, isAdmin } = useAuth();
+  const { signIn, user, profile } = useAuth();
   const router = useRouter();
 
   // Check auth state and redirect if already logged in
   useEffect(() => {
-    if (!loading && user) {
-      console.log('Login page - Auth state changed:', { user, isAdmin });
-      const params = new URLSearchParams(window.location.search);
-      const from = params.get('from') || (isAdmin ? '/admin' : '/documents');
-      console.log('Login page - Redirecting to:', from);
-      router.replace(from);
+    if (user && profile) {
+      const redirectTo = profile.role === 'admin' ? '/admin' : '/documents';
+      router.replace(redirectTo);
     }
-  }, [user, isAdmin, loading, router]);
+  }, [user, profile, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    console.log('Login page - Attempting login with:', email);
 
     try {
       await signIn(email, password);
-      console.log('Login page - Login successful');
-      // Don't redirect here - let the useEffect handle it
     } catch (error: any) {
-      console.error('Login page - Login error:', error);
       setError(error.message || 'Giriş yapılamadı');
     } finally {
       setLoading(false);
