@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -9,8 +9,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, user, isAdmin } = useAuth();
   const router = useRouter();
+
+  // Check auth state and redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      if (isAdmin) {
+        router.replace('/admin');
+      } else {
+        router.replace('/documents');
+      }
+    }
+  }, [user, isAdmin, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +30,7 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password);
-      router.push('/');
+      // No need to redirect here, useEffect will handle it
     } catch (error: any) {
       setError(error.message || 'Giriş yapılamadı');
     } finally {

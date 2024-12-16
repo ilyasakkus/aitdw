@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 type Profile = {
@@ -36,46 +36,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
 
-  // Initial auth state
+  // Fetch profile function
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error.message);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error:', error);
+      return null;
+    }
+  };
+
+  // Initialize auth state
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user || null);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
       if (session?.user) {
-        // Get user profile
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single()
-          .then(({ data, error }) => {
-            if (error) {
-              setProfile(null);
-              setIsAdmin(false);
-            } else {
-              setProfile(data);
-              setIsAdmin(data.role === 'admin');
-            }
-            setLoading(false);
-          });
-      } else {
-        setProfile(null);
-        setIsAdmin(false);
-        setLoading(false);
+        const profile = await fetchProfile(session.user.id);
+        if (profile) {
+          setProfile(profile);
+          setIsAdmin(profile.role === 'admin');
+        }
       }
+      setLoading(false);
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
-      if (!session?.user) {
-        setProfile(null);
-        setIsAdmin(false);
-      }
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
 
-    return () => subscription.unsubscribe();
+        if (session?.user) {
+          const profile = await fetchProfile(session.user.id);
+          if (profile) {
+            setProfile(profile);
+            setIsAdmin(profile.role === 'admin');
+          }
+        } else {
+          setProfile(null);
+          setIsAdmin(false);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -86,42 +108,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) throw error;
 
-    if (data.user) {
-      setUser(data.user);  // Update user state
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', data.user.id)
-        .single();
-
-      if (profileError || !profile) {
-        // Create default profile if doesn't exist
-        const { data: newProfile } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: data.user.id,
-            username: email.split('@')[0],
-            role: 'user',
-          })
-          .select()
-          .single();
-
-        if (newProfile) {
-          setProfile(newProfile);
-          setIsAdmin(newProfile.role === 'admin');
-        }
-      } else {
-        setProfile(profile);
-        setIsAdmin(profile.role === 'admin');
-      }
-    }
+    // Session and user will be automatically updated by onAuthStateChange
+    // No need to manually set them here
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    setIsAdmin(false);
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    
+    // Session and user will be automatically updated by onAuthStateChange
+    // No need to manually set them here
   };
 
   return (
@@ -132,5 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
