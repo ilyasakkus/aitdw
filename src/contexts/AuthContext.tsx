@@ -30,35 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Test Supabase connection
-    const testConnection = async () => {
-      try {
-        console.log('Testing Supabase connection...');
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .limit(1);
-
-        if (error) {
-          console.error('Supabase connection error:', error);
-        } else {
-          console.log('Supabase connection successful:', data);
-        }
-
-        // Also test auth connection
-        const { data: authData, error: authError } = await supabase.auth.getSession();
-        if (authError) {
-          console.error('Auth connection error:', authError);
-        } else {
-          console.log('Auth connection successful:', authData);
-        }
-      } catch (err) {
-        console.error('Connection test error:', err);
-      }
-    };
-
-    testConnection();
-
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -84,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchProfile = async (userId: string) => {
+    console.log('Fetching profile for user:', userId);
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -95,8 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    console.log('Profile data:', data);
     setProfile(data);
-    setIsAdmin(data.role === 'admin');
+    // Boss kullanıcısı için otomatik admin rolü
+    const isBossUser = data.username === 'boss';
+    setIsAdmin(isBossUser);
+    console.log('Is admin:', isBossUser);
   };
 
   const signIn = async (username: string, password: string) => {
@@ -105,27 +81,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (username === 'boss') {
         const { data, error } = await supabase.auth.signInWithPassword({
           email: 'boss@aitdw.app',
-          password,
+          password: password,
         });
 
-        console.log('Sign in attempt response:', { data, error });
-
-        if (error) {
-          console.error('Admin login error:', error.message, error);
-          throw new Error(`Login failed: ${error.message}`);
-        }
+        if (error) throw error;
 
         if (data?.user) {
-          console.log('Login successful, fetching profile...');
           await fetchProfile(data.user.id);
-          console.log('Profile fetched');
         }
-        return;
+      } else {
+        throw new Error('Geçersiz kullanıcı adı');
       }
-
-      throw new Error('Invalid username. Please use "boss" to login.');
     } catch (error: any) {
-      console.error('Sign in error:', error.message);
+      console.error('Error signing in:', error.message);
       throw error;
     }
   };

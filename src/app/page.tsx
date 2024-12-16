@@ -10,10 +10,14 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth/login');
+    if (!loading) {
+      if (!user) {
+        router.push('/auth/login');
+      } else if (isAdmin) {
+        router.push('/admin');
+      }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isAdmin]);
 
   const handleSignOut = async () => {
     try {
@@ -44,7 +48,7 @@ export default function Home() {
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
                 <h1 className="text-2xl font-bold text-indigo-600">
-                  {isAdmin ? 'AITDW Yönetim Paneli' : 'AITDW Teknik Yazar Paneli'}
+                  AITDW Teknik Yazar Paneli
                 </h1>
               </div>
             </div>
@@ -65,18 +69,14 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          {isAdmin ? (
-            <UserManagement />
-          ) : (
-            <div className="text-center py-12">
-              <h2 className="text-2xl font-semibold text-gray-900">
-                Teknik Yazar Paneline Hoş Geldiniz
-              </h2>
-              <p className="mt-2 text-gray-600">
-                Bu alan yakında kullanıma açılacaktır.
-              </p>
-            </div>
-          )}
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Teknik Yazar Paneline Hoş Geldiniz
+            </h2>
+            <p className="mt-2 text-gray-600">
+              Bu alan yakında kullanıma açılacaktır.
+            </p>
+          </div>
         </div>
       </main>
     </div>
