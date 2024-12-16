@@ -3,16 +3,24 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { Profile } from '@/types/supabase';
 
-interface AuthContextType {
+type Profile = {
+  id: string;
+  user_id: string;
+  username: string;
+  role: 'admin' | 'user';
+  created_at: string;
+  updated_at: string;
+};
+
+type AuthContextType = {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (username: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
-}
+};
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -28,183 +36,91 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  let timeoutId: NodeJS.Timeout;
 
+  // Initial auth state
   useEffect(() => {
-    let isSubscribed = true;
-
-    const setupAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!isSubscribed) return;
-        
-        if (session?.user) {
-          setUser(session.user);
-          await fetchProfile(session.user.id);
-        } else {
-          setUser(null);
-          setProfile(null);
-          setIsAdmin(false);
-        }
-      } catch (error) {
-        setUser(null);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        // Get user profile
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single()
+          .then(({ data, error }) => {
+            if (error) {
+              setProfile(null);
+              setIsAdmin(false);
+            } else {
+              setProfile(data);
+              setIsAdmin(data.role === 'admin');
+            }
+            setLoading(false);
+          });
+      } else {
         setProfile(null);
         setIsAdmin(false);
-      } finally {
-        if (isSubscribed) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
-    };
+    });
 
-    setupAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isSubscribed) return;
-
-      try {
-        // Sadece SIGNED_IN ve SIGNED_OUT eventlerinde işlem yapalım
-        if (event === 'SIGNED_IN' && session?.user) {
-          setUser(session.user);
-          // Profil daha önce yüklenmediyse fetch edelim
-          if (!profile || profile.user_id !== session.user.id) {
-            await fetchProfile(session.user.id);
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setProfile(null);
-          setIsAdmin(false);
-        }
-      } catch (error) {
-        setUser(null);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+      if (!session?.user) {
         setProfile(null);
         setIsAdmin(false);
       }
     });
 
-    return () => {
-      isSubscribed = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  const fetchProfile = async (userId: string) => {
-    try {
-      const fetchPromise = supabase
+  const signIn = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) throw error;
+
+    if (data.user) {
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', data.user.id)
         .single();
 
-      const timeoutPromise = new Promise((_, reject) =>
-        timeoutId = setTimeout(() => reject(new Error('Timeout')), 5000)
-      );
-
-      const { data, error } = await Promise.race([
-        fetchPromise,
-        timeoutPromise
-      ]) as any;
-
-      clearTimeout(timeoutId);
-
-      if (error) {
-        // Profil bulunamadıysa varsayılan olarak normal kullanıcı yapalım
-        setProfile({
-          id: userId,
-          user_id: userId,
-          username: userId,
-          role: 'user',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        setIsAdmin(false);
-        return;
-      }
-
-      if (!data) {
-        // Profil yoksa otomatik oluşturalım
-        const { data: newProfile, error: createError } = await supabase
+      if (profileError || !profile) {
+        // Create default profile if doesn't exist
+        const { data: newProfile } = await supabase
           .from('profiles')
-          .insert([
-            { 
-              id: userId,
-              user_id: userId, 
-              username: userId, 
-              role: 'user', 
-              created_at: new Date().toISOString(), 
-              updated_at: new Date().toISOString() 
-            }
-          ])
+          .insert({
+            user_id: data.user.id,
+            username: email.split('@')[0],
+            role: 'user',
+          })
+          .select()
           .single();
 
-        if (createError) {
-          console.error('Error creating profile:', createError);
-          setProfile({
-            id: userId,
-            user_id: userId,
-            username: userId,
-            role: 'user',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-          setIsAdmin(false);
-          return;
+        if (newProfile) {
+          setProfile(newProfile);
+          setIsAdmin(newProfile.role === 'admin');
         }
-
-        setProfile(newProfile);
-        setIsAdmin(false);
-        return;
+      } else {
+        setProfile(profile);
+        setIsAdmin(profile.role === 'admin');
       }
-
-      setProfile(data);
-      setIsAdmin(data.role === 'admin');
-
-    } catch (error) {
-      console.error('Unexpected error in fetchProfile:', error);
-      // Hata durumunda varsayılan profil
-      setProfile({
-        id: userId,
-        user_id: userId,
-        username: userId,
-        role: 'user',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-      setIsAdmin(false);
-    }
-  };
-
-  const signIn = async (username: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: `${username}@aitdw.app`,
-        password: password,
-      });
-
-      if (error) throw error;
-
-      if (data?.user) {
-        await fetchProfile(data.user.id);
-      }
-    } catch (error: any) {
-      console.error('Error signing in:', error.message);
-      throw error;
     }
   };
 
   const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      localStorage.clear();
-      setUser(null);
-      setProfile(null);
-      setIsAdmin(false);
-      window.location.href = '/auth/login';
-    } catch (error: any) {
-      console.error('Error signing out:', error.message);
-      throw error;
-    }
+    await supabase.auth.signOut();
+    setUser(null);
+    setProfile(null);
+    setIsAdmin(false);
   };
 
   return (
@@ -214,10 +130,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export function useAuth() {
+  return useContext(AuthContext);
+}
