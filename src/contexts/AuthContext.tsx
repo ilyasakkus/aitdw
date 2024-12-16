@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!isSubscribed) return;
-
+        
         if (session?.user) {
           setUser(session.user);
           await fetchProfile(session.user.id);
@@ -48,8 +48,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsAdmin(false);
         }
       } catch (error) {
-        console.error('Auth setup error:', error);
-        if (!isSubscribed) return;
         setUser(null);
         setProfile(null);
         setIsAdmin(false);
@@ -64,27 +62,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isSubscribed) return;
-      
-      setLoading(true);
 
       try {
+        // Sadece SIGNED_IN ve SIGNED_OUT eventlerinde işlem yapalım
         if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user);
-          await fetchProfile(session.user.id);
-        } else {
+          // Profil daha önce yüklenmediyse fetch edelim
+          if (!profile || profile.user_id !== session.user.id) {
+            await fetchProfile(session.user.id);
+          }
+        } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setProfile(null);
           setIsAdmin(false);
         }
       } catch (error) {
-        console.error('Error in auth state change:', error);
         setUser(null);
         setProfile(null);
         setIsAdmin(false);
-      } finally {
-        if (isSubscribed) {
-          setLoading(false);
-        }
       }
     });
 
