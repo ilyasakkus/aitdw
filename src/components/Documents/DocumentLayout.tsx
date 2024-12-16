@@ -18,6 +18,7 @@ export default function DocumentLayout({ title, category, defaultXML }: Document
   const [xmlContent, setXmlContent] = useState(defaultXML);
   const [activePreview, setActivePreview] = useState<'pdf' | 'xml'>('pdf');
   const [pdfUrl, setPdfUrl] = useState<string | undefined>(undefined);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -26,8 +27,44 @@ export default function DocumentLayout({ title, category, defaultXML }: Document
   }, [loading, user, router]);
 
   useEffect(() => {
-    // Here you would typically generate/update the PDF URL based on the XML content
-    setPdfUrl('/sample.pdf');
+    const generatePDF = async () => {
+      if (!xmlContent) return;
+      
+      try {
+        setIsGeneratingPDF(true);
+        const response = await fetch('/api/generate-pdf', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ xmlContent }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate PDF');
+        }
+
+        const { pdf } = await response.json();
+        const blob = new Blob([Buffer.from(pdf, 'base64')], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        setPdfUrl(url);
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+      } finally {
+        setIsGeneratingPDF(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(() => {
+      generatePDF();
+    }, 1000);
+
+    return () => {
+      clearTimeout(debounceTimer);
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
   }, [xmlContent]);
 
   if (loading && !user) {
@@ -92,7 +129,13 @@ export default function DocumentLayout({ title, category, defaultXML }: Document
           <div className="bg-white rounded-lg h-[calc(100%-4rem)] overflow-auto">
             {activePreview === 'pdf' ? (
               <div className="h-full bg-gray-50 rounded border border-gray-200">
-                <PDFPreview pdfUrl={pdfUrl} />
+                {isGeneratingPDF ? (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : (
+                  <PDFPreview pdfUrl={pdfUrl} />
+                )}
               </div>
             ) : (
               <div className="h-full bg-gray-50 rounded border border-gray-200">
