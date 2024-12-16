@@ -1,4 +1,6 @@
-import { Editor } from '@monaco-editor/react';
+'use client';
+
+import dynamic from 'next/dynamic';
 import { useState, useCallback } from 'react';
 import { S1000DValidator } from '@/lib/s1000d/validator';
 import { BREXValidator, BREXValidationResult } from '@/lib/s1000d/brex';
@@ -29,6 +31,12 @@ interface XMLEditorProps {
   onChange: (value: string) => void;
 }
 
+// Monaco Editor'ı dynamic olarak import ediyoruz
+const MonacoEditor = dynamic(
+  () => import('@monaco-editor/react').then(mod => mod.Editor),
+  { ssr: false } // Server-side rendering'i devre dışı bırakıyoruz
+);
+
 export default function XMLEditor({ value, onChange }: XMLEditorProps) {
   const [validationResult, setValidationResult] = useState<{ isValid: boolean; errors: string[] }>({ isValid: true, errors: [] });
   const [brexResult, setBrexResult] = useState<BREXValidationResult>({ isValid: true, violations: [] });
@@ -53,7 +61,7 @@ export default function XMLEditor({ value, onChange }: XMLEditorProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1">
-        <Editor
+        <MonacoEditor
           height="100%"
           defaultLanguage="xml"
           value={value}
