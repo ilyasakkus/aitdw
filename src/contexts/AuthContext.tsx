@@ -67,44 +67,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (username: string, password: string) => {
     try {
-      // First try direct email login for admin
+      // For admin login
       if (username === 'admin') {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: 'admin@aitdw.app',
-          password,
+          password: password,
         });
-        if (error) throw error;
+
+        if (error) {
+          console.error('Sign in error:', error);
+          throw error;
+        }
+
+        if (data?.user) {
+          await fetchProfile(data.user.id);
+        }
         return;
       }
 
-      // For other users, look up email by username
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('username', username)
-        .single();
-
-      if (profileError || !profile) {
-        throw new Error('Username not found');
-      }
-
-      // Get email from auth.users
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('email')
-        .eq('id', profile.user_id)
-        .single();
-
-      if (userError || !userData) {
-        throw new Error('User not found');
-      }
-
-      const { error } = await supabase.auth.signInWithPassword({
-        email: userData.email,
-        password,
-      });
-      
-      if (error) throw error;
+      throw new Error('Invalid credentials');
     } catch (error) {
       console.error('Sign in error:', error);
       throw error;
