@@ -31,14 +31,13 @@ export default function Documents() {
   const [xmlContent, setXmlContent] = useState(defaultXML);
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.replace('/auth/login');
-      }
+    if (!loading && !user) {
+      router.replace('/auth/login');
     }
   }, [loading, user, router]);
 
-  if (loading) {
+  // Only show loading state on initial load
+  if (loading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
