@@ -14,12 +14,11 @@ export default function LoginPage() {
 
   // Check auth state and redirect if already logged in
   useEffect(() => {
+    console.log('Auth state changed:', { user, isAdmin });
     if (user) {
-      if (isAdmin) {
-        router.replace('/admin');
-      } else {
-        router.replace('/documents');
-      }
+      const redirectTo = isAdmin ? '/admin' : '/documents';
+      console.log('Redirecting to:', redirectTo);
+      router.replace(redirectTo);
     }
   }, [user, isAdmin, router]);
 
@@ -27,11 +26,13 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
+    console.log('Attempting login with:', email);
 
     try {
       await signIn(email, password);
-      // No need to redirect here, useEffect will handle it
+      console.log('Login successful');
     } catch (error: any) {
+      console.error('Login error:', error);
       setError(error.message || 'Giriş yapılamadı');
     } finally {
       setLoading(false);

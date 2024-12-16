@@ -101,15 +101,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      console.log('Signing in with:', email);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) throw error;
+      if (error) {
+        console.error('Sign in error:', error.message);
+        throw error;
+      }
 
-    // Session and user will be automatically updated by onAuthStateChange
-    // No need to manually set them here
+      console.log('Sign in successful:', data);
+
+      if (!data.user) {
+        throw new Error('No user data returned');
+      }
+
+      // Manually fetch and set profile after successful sign in
+      const profile = await fetchProfile(data.user.id);
+      if (profile) {
+        setUser(data.user);
+        setProfile(profile);
+        setIsAdmin(profile.role === 'admin');
+        console.log('Profile set:', profile);
+      } else {
+        // Create a new profile if one doesn't exist
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: data.user.id,
+            username: email.split('@')[0],
+            role: 'user',
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating profile:', createError);
+          throw createError;
+        }
+
+        if (newProfile) {
+          setUser(data.user);
+          setProfile(newProfile);
+          setIsAdmin(newProfile.role === 'admin');
+          console.log('New profile created:', newProfile);
+        }
+      }
+    } catch (error) {
+      console.error('Unexpected error during sign in:', error);
+      throw error;
+    }
   };
 
   const signOut = async () => {
