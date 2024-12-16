@@ -97,28 +97,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (username: string, password: string) => {
     try {
       if (username === 'admin') {
-        // First verify the connection
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('user_id')
-          .eq('username', 'admin')
-          .single();
-        
-        console.log('Found admin profile:', profileData);
-
+        // Direct auth attempt without profile check
         const { data, error } = await supabase.auth.signInWithPassword({
           email: 'admin@aitdw.app',
           password,
         });
 
+        console.log('Sign in attempt response:', { data, error });
+
         if (error) {
-          console.error('Admin login error:', error.message);
+          console.error('Admin login error:', error.message, error);
           throw new Error(`Login failed: ${error.message}`);
         }
 
-        console.log('Admin login successful:', data.user?.id);
         if (data?.user) {
+          console.log('Login successful, fetching profile...');
           await fetchProfile(data.user.id);
+          console.log('Profile fetched');
         }
         return;
       }
