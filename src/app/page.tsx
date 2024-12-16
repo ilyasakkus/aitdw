@@ -15,11 +15,15 @@ export default function Home() {
       if (!user) {
         router.push('/auth/login');
       } else {
-        // Kullanıcı giriş yapmışsa documents sayfasına yönlendir
-        router.push('/documents');
+        // Admin kullanıcıları admin sayfasına, normal kullanıcıları documents sayfasına yönlendir
+        if (isAdmin) {
+          router.push('/admin');
+        } else {
+          router.push('/documents');
+        }
       }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isAdmin]);
 
   if (loading) {
     return (
