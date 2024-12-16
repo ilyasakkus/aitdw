@@ -1,4 +1,6 @@
-import { parseString } from 'xml2js';
+import { XMLParser, XMLValidator } from 'fast-xml-parser';
+import * as fs from 'fs';
+import path from 'path';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -6,65 +8,65 @@ export interface ValidationResult {
 }
 
 export class S1000DValidator {
-  validateXML(xml: string): Promise<ValidationResult> {
-    return new Promise((resolve) => {
-      parseString(xml, { explicitArray: false }, (err, result) => {
-        if (err) {
-          resolve({
-            isValid: false,
-            errors: [err.message]
-          });
-          return;
-        }
-
-        try {
-          // Basic structure validation
-          if (!result.dmodule) {
-            resolve({
-              isValid: false,
-              errors: ['Root element must be dmodule']
-            });
-            return;
-          }
-
-          const dmodule = result.dmodule;
-          if (!dmodule.identAndStatusSection) {
-            resolve({
-              isValid: false,
-              errors: ['Missing identAndStatusSection']
-            });
-            return;
-          }
-
-          const identAndStatusSection = dmodule.identAndStatusSection;
-          if (!identAndStatusSection.dmAddress) {
-            resolve({
-              isValid: false,
-              errors: ['Missing dmAddress in identAndStatusSection']
-            });
-            return;
-          }
-
-          const dmAddress = identAndStatusSection.dmAddress;
-          if (!dmAddress.dmIdent) {
-            resolve({
-              isValid: false,
-              errors: ['Missing dmIdent in dmAddress']
-            });
-            return;
-          }
-
-          resolve({
-            isValid: true,
-            errors: []
-          });
-        } catch (error) {
-          resolve({
-            isValid: false,
-            errors: [(error as Error).message]
-          });
-        }
-      });
+  private parser: XMLParser;
+  
+  constructor() {
+    this.parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: "@_",
+      allowBooleanAttributes: true
     });
+  }
+
+  async validateXML(xml: string): Promise<ValidationResult> {
+    try {
+      // First validate XML syntax
+      const validationResult = XMLValidator.validate(xml, {
+        allowBooleanAttributes: true
+      });
+
+      if (validationResult !== true) {
+        return {
+          isValid: false,
+          errors: [validationResult.err.msg]
+        };
+      }
+
+      // Parse XML
+      const result = this.parser.parse(xml);
+
+      // Basic structure validation
+      if (!result.dmodule) {
+        return {
+          isValid: false,
+          errors: ['Root element must be dmodule']
+        };
+      }
+
+      // Validate required S1000D structure
+      const errors: string[] = [];
+      const dmodule = result.dmodule;
+
+      if (!dmodule.identAndStatusSection) {
+        errors.push('Missing identAndStatusSection');
+      } else {
+        const identAndStatusSection = dmodule.identAndStatusSection;
+        if (!identAndStatusSection.dmAddress) {
+          errors.push('Missing dmAddress in identAndStatusSection');
+        } else if (!identAndStatusSection.dmAddress.dmIdent) {
+          errors.push('Missing dmIdent in dmAddress');
+        }
+      }
+
+      return {
+        isValid: errors.length === 0,
+        errors
+      };
+    } catch (error: any) {
+      return {
+        isValid: false,
+        errors: [error.message]
+      };
+    }
   }
 }
