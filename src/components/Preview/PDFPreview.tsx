@@ -8,9 +8,10 @@ import 'react-pdf/dist/esm/Page/TextLayer.css';
 interface PDFPreviewProps {
   xmlContent?: string;
   onRenderClick?: () => void;
+  pdfUrl?: string;
 }
 
-export default function PDFPreview({ xmlContent, onRenderClick }: PDFPreviewProps) {
+export default function PDFPreview({ xmlContent, onRenderClick, pdfUrl }: PDFPreviewProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.5);
@@ -52,7 +53,7 @@ export default function PDFPreview({ xmlContent, onRenderClick }: PDFPreviewProp
     setPageNumber(1);
   }
 
-  if (!xmlContent && !pdfData) {
+  if (!xmlContent && !pdfData && !pdfUrl) {
     return (
       <div className="h-full flex items-center justify-center text-gray-500">
         No content available
@@ -72,7 +73,7 @@ export default function PDFPreview({ xmlContent, onRenderClick }: PDFPreviewProp
               Render PDF
             </button>
           )}
-          {pdfData && (
+          {(pdfData || pdfUrl) && (
             <>
               <button
                 onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
@@ -91,7 +92,7 @@ export default function PDFPreview({ xmlContent, onRenderClick }: PDFPreviewProp
             </>
           )}
         </div>
-        {pdfData && (
+        {(pdfData || pdfUrl) && (
           <>
             <div className="text-sm text-gray-600">
               Page {pageNumber} of {numPages}
@@ -120,9 +121,9 @@ export default function PDFPreview({ xmlContent, onRenderClick }: PDFPreviewProp
           </div>
         ) : error ? (
           <div className="text-red-500">{error}</div>
-        ) : pdfData ? (
+        ) : pdfData || pdfUrl ? (
           <Document
-            file={pdfData}
+            file={pdfData || pdfUrl}
             onLoadSuccess={onDocumentLoadSuccess}
             loading={
               <div className="flex items-center justify-center">
