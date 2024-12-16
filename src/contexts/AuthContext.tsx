@@ -61,24 +61,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize auth state
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        const profile = await fetchProfile(session.user.id);
-        if (profile) {
-          setProfile(profile);
-          setIsAdmin(profile.role === 'admin');
+    const initializeAuth = async () => {
+      try {
+        console.log('Initializing auth state...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error.message);
+          return;
         }
+
+        console.log('Initial session:', session ? 'exists' : 'null');
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          console.log('Fetching profile for user:', session.user.id);
+          const profile = await fetchProfile(session.user.id);
+          if (profile) {
+            console.log('Profile found:', profile.role);
+            setProfile(profile);
+            setIsAdmin(profile.role === 'admin');
+          }
+        }
+      } catch (error) {
+        console.error('Error during auth initialization:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, 'Session:', session ? 'exists' : 'null');
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -102,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('Signing in with:', email);
+      console.log('Attempting to sign in...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -113,45 +131,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
-      console.log('Sign in successful:', data);
-
-      if (!data.user) {
-        throw new Error('No user data returned');
+      if (!data.user || !data.session) {
+        console.error('No user or session data returned');
+        throw new Error('No user or session data returned');
       }
 
-      // Manually fetch and set profile after successful sign in
+      console.log('Sign in successful, user:', data.user.id);
+      
+      // Explicitly update the session
+      setSession(data.session);
+      setUser(data.user);
+
       const profile = await fetchProfile(data.user.id);
       if (profile) {
-        setUser(data.user);
         setProfile(profile);
         setIsAdmin(profile.role === 'admin');
-        console.log('Profile set:', profile);
-      } else {
-        // Create a new profile if one doesn't exist
-        const { data: newProfile, error: createError } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: data.user.id,
-            username: email.split('@')[0],
-            role: 'user',
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating profile:', createError);
-          throw createError;
-        }
-
-        if (newProfile) {
-          setUser(data.user);
-          setProfile(newProfile);
-          setIsAdmin(newProfile.role === 'admin');
-          console.log('New profile created:', newProfile);
-        }
       }
     } catch (error) {
-      console.error('Unexpected error during sign in:', error);
+      console.error('Error during sign in:', error);
       throw error;
     }
   };
