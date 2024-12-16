@@ -12,14 +12,20 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'users' | 'tasks'>('users');
 
   useEffect(() => {
+    console.log('Admin Dashboard - Loading:', loading);
+    console.log('Admin Dashboard - User:', user);
+    console.log('Admin Dashboard - Is Admin:', isAdmin);
+    
     if (!loading) {
       if (!user || !isAdmin) {
+        console.log('Redirecting to home - Not authorized');
         router.push('/');
       }
     }
   }, [user, loading, router, isAdmin]);
 
   if (loading) {
+    console.log('Showing loading spinner');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -28,6 +34,7 @@ export default function AdminDashboard() {
   }
 
   if (!user || !isAdmin) {
+    console.log('User not authorized, returning null');
     return null;
   }
 

@@ -32,9 +32,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const setupAuth = async () => {
       try {
+        console.log('Setting up auth...');
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('Session:', session);
         setUser(session?.user ?? null);
         if (session?.user) {
+          console.log('User found, fetching profile...');
           await fetchProfile(session.user.id);
         }
       } catch (error) {
@@ -47,10 +50,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setupAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
+      console.log('Auth state changed:', event);
+      console.log('Session in state change:', session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        console.log('User found in state change, fetching profile...');
         await fetchProfile(session.user.id);
       } else {
         setProfile(null);
