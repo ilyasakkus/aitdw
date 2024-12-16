@@ -49,50 +49,52 @@ export default function XMLEditor({ value, onChange }: XMLEditorProps) {
       onChange(newValue);
       
       // XML Schema validation
-      const schemaResult = await validator.validateXML(newValue);
-      setValidationResult(schemaResult);
-      
+      const validationResult = await validator.validateXML(newValue);
+      setValidationResult(validationResult);
+
       // BREX validation
-      const brexValidation = brexValidator.validate(newValue);
-      setBrexResult(brexValidation);
+      const brexResult = await brexValidator.validate(newValue);
+      setBrexResult(brexResult);
     }
-  }, [onChange, validator, brexValidator]);
+  }, [onChange]);
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1">
-        <MonacoEditor
-          height="100%"
-          defaultLanguage="xml"
-          value={value}
-          onChange={handleEditorChange}
-          options={{
-            minimap: { enabled: false },
-            lineNumbers: 'on',
-            roundedSelection: false,
-            scrollBeyondLastLine: false,
-            readOnly: false,
-            theme: 'vs-dark',
-          }}
-        />
-      </div>
-      {(!validationResult.isValid || !brexResult.isValid) && (
-        <div className="bg-red-100 p-4 mt-4 rounded">
-          {!validationResult.isValid && (
-            <div className="text-red-700">
-              <h3 className="font-bold">XML Validation Errors:</h3>
-              <ul className="list-disc pl-5">
-                {validationResult.errors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {!brexResult.isValid && (
-            <BREXValidationPanel validationResult={brexResult} />
-          )}
+      <div className="flex-1 min-h-[800px] bg-white shadow-lg rounded-lg overflow-hidden">
+        <div className="h-full" style={{ padding: '21mm 30mm', backgroundColor: 'white' }}>
+          <MonacoEditor
+            height="100%"
+            defaultLanguage="xml"
+            value={value}
+            onChange={handleEditorChange}
+            options={{
+              minimap: { enabled: false },
+              lineNumbers: 'on',
+              scrollBeyondLastLine: false,
+              wordWrap: 'on',
+              wrappingStrategy: 'advanced',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              theme: 'vs-light'
+            }}
+          />
         </div>
-      )}
+      </div>
+      
+      {/* Validation Results */}
+      <div className="mt-4">
+        <BREXValidationPanel validationResult={brexResult} />
+        {!validationResult.isValid && (
+          <div className="mt-2 p-4 bg-red-50 text-red-700 rounded">
+            <h3 className="font-bold">XML Schema Validation Errors:</h3>
+            <ul className="list-disc pl-5">
+              {validationResult.errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
