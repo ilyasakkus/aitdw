@@ -1,6 +1,8 @@
 import { Editor } from '@monaco-editor/react';
 import { useState, useCallback } from 'react';
 import { S1000DValidator } from '@/lib/s1000d/validator';
+import { BREXValidator, BREXValidationResult } from '@/lib/s1000d/brex';
+import BREXValidationPanel from './BREXValidationPanel';
 
 const defaultXML = `<?xml version="1.0" encoding="UTF-8"?>
 <dmodule>
@@ -25,13 +27,22 @@ const defaultXML = `<?xml version="1.0" encoding="UTF-8"?>
 export default function XMLEditor() {
   const [value, setValue] = useState(defaultXML);
   const [validationResult, setValidationResult] = useState<{ isValid: boolean; errors: string[] }>({ isValid: true, errors: [] });
+  const [brexResult, setBrexResult] = useState<BREXValidationResult>({ isValid: true, violations: [] });
+  
   const validator = new S1000DValidator();
+  const brexValidator = new BREXValidator();
 
   const handleEditorChange = useCallback((value: string | undefined) => {
     if (value) {
       setValue(value);
-      const result = validator.validateXML(value);
-      setValidationResult(result);
+      
+      // XML Schema validation
+      const schemaResult = validator.validateXML(value);
+      setValidationResult(schemaResult);
+      
+      // BREX validation
+      const brexValidation = brexValidator.validate(value);
+      setBrexResult(brexValidation);
     }
   }, []);
 
@@ -52,8 +63,10 @@ export default function XMLEditor() {
           }}
         />
       </div>
+      
+      {/* Schema Validation Results */}
       <div className={`mt-4 p-4 rounded-lg ${validationResult.isValid ? 'bg-green-100' : 'bg-red-100'}`}>
-        <h3 className="font-semibold mb-2">Validation Status:</h3>
+        <h3 className="font-semibold mb-2">Schema Validation Status:</h3>
         {validationResult.isValid ? (
           <p className="text-green-700">Document is valid</p>
         ) : (
@@ -67,6 +80,9 @@ export default function XMLEditor() {
           </div>
         )}
       </div>
+
+      {/* BREX Validation Results */}
+      <BREXValidationPanel validationResult={brexResult} />
     </div>
   );
 }
