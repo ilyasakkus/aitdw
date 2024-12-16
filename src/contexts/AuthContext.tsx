@@ -67,27 +67,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (username: string, password: string) => {
     try {
-      // For admin login
       if (username === 'admin') {
+        console.log('Attempting admin login...');
         const { data, error } = await supabase.auth.signInWithPassword({
           email: 'admin@aitdw.app',
-          password: password,
+          password,
         });
 
         if (error) {
-          console.error('Sign in error:', error);
-          throw error;
+          console.error('Admin login error:', error.message);
+          throw new Error(`Login failed: ${error.message}`);
         }
 
+        console.log('Admin login successful:', data.user?.id);
         if (data?.user) {
           await fetchProfile(data.user.id);
         }
         return;
       }
 
-      throw new Error('Invalid credentials');
-    } catch (error) {
-      console.error('Sign in error:', error);
+      throw new Error('Only admin login is supported at the moment');
+    } catch (error: any) {
+      console.error('Sign in error:', error.message);
       throw error;
     }
   };
