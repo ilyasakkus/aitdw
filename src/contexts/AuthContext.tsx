@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (username: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -19,12 +20,14 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signIn: async () => {},
   signOut: async () => {},
+  isAdmin: false,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     // Test Supabase connection
@@ -72,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await fetchProfile(session.user.id);
       } else {
         setProfile(null);
+        setIsAdmin(false);
       }
       setLoading(false);
     });
@@ -92,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setProfile(data);
+    setIsAdmin(data.role === 'admin');
   };
 
   const signIn = async (username: string, password: string) => {
@@ -126,17 +131,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setUser(null);
+      setProfile(null);
+      setIsAdmin(false);
+    } catch (error: any) {
+      console.error('Error signing out:', error.message);
+      throw error;
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
