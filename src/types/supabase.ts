@@ -19,9 +19,25 @@ export type DocumentVersion = {
   comment: string
 }
 
+export type UserRole = 'admin' | 'user'
+
+export type Profile = {
+  id: string
+  user_id: string
+  username: string
+  role: UserRole
+  created_at: string
+  updated_at: string
+}
+
 export type Database = {
   public: {
     Tables: {
+      profiles: {
+        Row: Profile
+        Insert: Omit<Profile, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<Profile, 'id'>>
+      }
       documents: {
         Row: Document
         Insert: Omit<Document, 'id' | 'created_at' | 'updated_at'>
