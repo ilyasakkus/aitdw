@@ -31,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const setupAuth = async () => {
+      setLoading(true);  
       try {
         console.log('Setting up auth...');
         const { data: { session } } = await supabase.auth.getSession();
@@ -50,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setupAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setLoading(true);  
       console.log('Auth state changed:', event);
       console.log('Session in state change:', session);
       setUser(session?.user ?? null);

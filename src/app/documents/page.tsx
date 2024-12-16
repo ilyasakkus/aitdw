@@ -31,10 +31,16 @@ export default function Documents() {
   const [xmlContent, setXmlContent] = useState(defaultXML);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth/login');
+    if (!loading) {
+      if (!user) {
+        console.log('No user found, redirecting to login');
+        router.replace('/auth/login');
+        return;
+      }
+      // Kullanıcı varsa burada kalmasına izin ver
+      console.log('User authenticated:', user);
     }
-  }, [user, loading, router]);
+  }, [loading, user, router]);
 
   if (loading) {
     return (
