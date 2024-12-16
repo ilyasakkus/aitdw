@@ -31,18 +31,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const setupAuth = async () => {
-      setLoading(true);  
+      setLoading(true);
       try {
-        console.log('Setting up auth...');
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('Session:', session);
-        setUser(session?.user ?? null);
+        console.log('Initial session:', session);
+        
         if (session?.user) {
-          console.log('User found, fetching profile...');
+          setUser(session.user);
           await fetchProfile(session.user.id);
+        } else {
+          setUser(null);
+          setProfile(null);
+          setIsAdmin(false);
         }
       } catch (error) {
         console.error('Auth setup error:', error);
+        setUser(null);
+        setProfile(null);
+        setIsAdmin(false);
       } finally {
         setLoading(false);
       }
@@ -51,18 +57,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setupAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setLoading(true);  
-      console.log('Auth state changed:', event);
-      console.log('Session in state change:', session);
-      setUser(session?.user ?? null);
-      
+      console.log('Auth state changed:', event, 'Session:', session);
+      setLoading(true);
+
       if (session?.user) {
-        console.log('User found in state change, fetching profile...');
+        setUser(session.user);
         await fetchProfile(session.user.id);
       } else {
+        setUser(null);
         setProfile(null);
         setIsAdmin(false);
       }
+      
       setLoading(false);
     });
 
@@ -72,22 +78,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchProfile = async (userId: string) => {
-    console.log('Fetching profile for user:', userId);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    
-    if (error) {
-      console.error('Error fetching profile:', error);
-      return;
-    }
+    try {
+      console.log('Fetching profile for user:', userId);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        setProfile(null);
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
 
-    console.log('Profile data:', data);
-    setProfile(data);
-    setIsAdmin(data.role === 'admin');
-    console.log('Is admin:', data.role === 'admin');
+      if (!data) {
+        console.log('No profile found for user');
+        setProfile(null);
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
+
+      console.log('Profile data:', data);
+      setProfile(data);
+      setIsAdmin(data.role === 'admin');
+      console.log('Is admin:', data.role === 'admin');
+    } catch (error) {
+      console.error('Unexpected error in fetchProfile:', error);
+      setProfile(null);
+      setIsAdmin(false);
+    }
   };
 
   const signIn = async (username: string, password: string) => {
