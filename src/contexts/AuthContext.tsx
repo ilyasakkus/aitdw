@@ -96,15 +96,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (username: string, password: string) => {
     try {
-      // Admin users mapping
-      const adminEmails: { [key: string]: string } = {
-        'admin': 'admin@aitdw.app',
-        'boss': 'boss@aitdw.app'
-      };
-
-      if (adminEmails[username]) {
+      // Only allow boss login
+      if (username === 'boss') {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: adminEmails[username],
+          email: 'boss@aitdw.app',
           password,
         });
 
@@ -123,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      throw new Error('Only admin login is supported at the moment');
+      throw new Error('Invalid username. Please use "boss" to login.');
     } catch (error: any) {
       console.error('Sign in error:', error.message);
       throw error;
