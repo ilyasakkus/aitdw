@@ -96,10 +96,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (username: string, password: string) => {
     try {
-      if (username === 'admin') {
-        // Direct auth attempt without profile check
+      // Admin users mapping
+      const adminEmails: { [key: string]: string } = {
+        'admin': 'admin@aitdw.app',
+        'boss': 'boss@aitdw.app'
+      };
+
+      if (adminEmails[username]) {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: 'admin@aitdw.app',
+          email: adminEmails[username],
           password,
         });
 
