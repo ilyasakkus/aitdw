@@ -1,37 +1,27 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-
-const defaultXML = ''; // Define the default XML content
 
 export default function Home() {
-  const { user, profile, loading, signOut, isAdmin } = useAuth();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.push('/auth/login');
+        router.replace('/auth/login');
       } else {
-        // Admin kullanıcıları admin sayfasına, normal kullanıcıları documents sayfasına yönlendir
-        if (isAdmin) {
-          router.push('/admin');
-        } else {
-          router.push('/documents');
-        }
+        router.replace(profile?.role === 'admin' ? '/admin' : '/documents');
       }
     }
-  }, [user, loading, router, isAdmin]);
+  }, [loading, user, profile, router]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
-
-  return null; // Ana sayfa direkt yönlendirme yapacak
+  // Show loading spinner while checking auth state
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+    </div>
+  );
 }
