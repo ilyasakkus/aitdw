@@ -36,12 +36,12 @@ export default function XMLEditor({ value, onChange }: XMLEditorProps) {
   const validator = new S1000DValidator();
   const brexValidator = new BREXValidator();
 
-  const handleEditorChange = useCallback((newValue: string | undefined) => {
+  const handleEditorChange = useCallback(async (newValue: string | undefined) => {
     if (newValue) {
       onChange(newValue);
       
       // XML Schema validation
-      const schemaResult = validator.validateXML(newValue);
+      const schemaResult = await validator.validateXML(newValue);
       setValidationResult(schemaResult);
       
       // BREX validation
@@ -52,41 +52,39 @@ export default function XMLEditor({ value, onChange }: XMLEditorProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="h-[600px] w-full">
+      <div className="flex-1">
         <Editor
           height="100%"
           defaultLanguage="xml"
-          defaultValue={value}
+          value={value}
           onChange={handleEditorChange}
           options={{
             minimap: { enabled: false },
-            fontSize: 14,
-            wordWrap: 'on',
-            formatOnPaste: true,
-            formatOnType: true,
+            lineNumbers: 'on',
+            roundedSelection: false,
+            scrollBeyondLastLine: false,
+            readOnly: false,
+            theme: 'vs-dark',
           }}
         />
       </div>
-      
-      {/* Schema Validation Results */}
-      <div className={`mt-4 p-4 rounded-lg ${validationResult.isValid ? 'bg-green-100' : 'bg-red-100'}`}>
-        <h3 className="font-semibold mb-2">Schema Validation Status:</h3>
-        {validationResult.isValid ? (
-          <p className="text-green-700">Document is valid</p>
-        ) : (
-          <div>
-            <p className="text-red-700 font-semibold">Validation Errors:</p>
-            <ul className="list-disc pl-5">
-              {validationResult.errors.map((error, index) => (
-                <li key={index} className="text-red-600">{error}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      {/* BREX Validation Results */}
-      <BREXValidationPanel validationResult={brexResult} />
+      {(!validationResult.isValid || !brexResult.isValid) && (
+        <div className="bg-red-100 p-4 mt-4 rounded">
+          {!validationResult.isValid && (
+            <div className="text-red-700">
+              <h3 className="font-bold">XML Validation Errors:</h3>
+              <ul className="list-disc pl-5">
+                {validationResult.errors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {!brexResult.isValid && (
+            <BREXValidationPanel validationResult={brexResult} />
+          )}
+        </div>
+      )}
     </div>
   );
 }
