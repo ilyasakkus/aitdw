@@ -16,14 +16,36 @@ export default function LoginPage() {
   }, [user, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to AITDW
-          </h2>
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="text-center">
+          <h1 className="block text-gray-900 text-5xl font-extrabold mb-2">AITDW</h1>
+          <h2 className="text-gray-600 text-lg">Technical Document Writer</h2>
         </div>
-        <LoginButton />
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            <h2 className="mt-2 mb-6 text-center text-3xl font-extrabold text-gray-900">
+              Sign in to your account
+            </h2>
+          </div>
+          <LoginButton />
+          
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">
+                  Protected Area
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
