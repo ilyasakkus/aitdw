@@ -12,22 +12,16 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'users' | 'tasks'>('users');
 
   useEffect(() => {
-    console.log('AdminDashboard - Current state:', { loading, user, isAdmin });
-    
     if (!loading) {
       if (!user) {
-        console.log('No user found, redirecting to login');
         router.replace('/auth/login');
         return;
       }
       
       if (!isAdmin) {
-        console.log('User is not admin, redirecting to documents');
         router.replace('/documents');
         return;
       }
-
-      console.log('User is authenticated and admin');
     }
   }, [loading, user, isAdmin, router]);
 

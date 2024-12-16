@@ -35,13 +35,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const setupAuth = async () => {
       try {
-        console.log('Setting up auth...');
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!isSubscribed) return;
 
         if (session?.user) {
-          console.log('Session found, user:', session.user);
           setUser(session.user);
           await fetchProfile(session.user.id);
         } else {
@@ -67,11 +65,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isSubscribed) return;
       
-      console.log('Auth state changed:', event, session);
       setLoading(true);
 
       try {
-        if (session?.user) {
+        if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user);
           await fetchProfile(session.user.id);
         } else {
@@ -99,22 +96,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     try {
-      console.log('Starting to fetch profile for user:', userId);
-      
-      // 5 saniyelik timeout ekleyelim
-      const timeoutPromise = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => {
-          reject(new Error('Profile fetch timeout'));
-        }, 5000);
-      });
-
       const fetchPromise = supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
         .single();
 
-      // Race condition ile timeout kontrolü yapalım
+      const timeoutPromise = new Promise((_, reject) =>
+        timeoutId = setTimeout(() => reject(new Error('Timeout')), 5000)
+      );
+
       const { data, error } = await Promise.race([
         fetchPromise,
         timeoutPromise
@@ -123,7 +114,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(timeoutId);
 
       if (error) {
-        console.error('Error fetching profile:', error);
         // Profil bulunamadıysa varsayılan olarak normal kullanıcı yapalım
         setProfile({
           id: userId,
@@ -138,7 +128,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!data) {
-        console.log('No profile found, creating default profile');
         // Profil yoksa otomatik oluşturalım
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
@@ -173,7 +162,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      console.log('Profile fetched successfully:', data);
       setProfile(data);
       setIsAdmin(data.role === 'admin');
 

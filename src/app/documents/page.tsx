@@ -33,12 +33,8 @@ export default function Documents() {
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        console.log('No user found, redirecting to login');
         router.replace('/auth/login');
-        return;
       }
-      // Kullanıcı varsa burada kalmasına izin ver
-      console.log('User authenticated:', user);
     }
   }, [loading, user, router]);
 
