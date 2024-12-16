@@ -65,9 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(data);
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (username: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
-      email: email.includes('@') ? email : `${email}@aitdw.local`,
+      email: 'admin@aitdw.app',
       password,
     });
     if (error) throw error;
