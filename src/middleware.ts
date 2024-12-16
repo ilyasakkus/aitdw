@@ -5,38 +5,80 @@ import type { NextRequest } from 'next/server';
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
-  const { data: { session } } = await supabase.auth.getSession();
 
-  // If the user is not logged in and trying to access a protected route
-  if (!session && !req.nextUrl.pathname.startsWith('/auth/')) {
+  try {
+    // Get session
+    const { data: { session } } = await supabase.auth.getSession();
+
+    // If accessing the root path '/', redirect based on auth status and role
+    if (req.nextUrl.pathname === '/') {
+      if (!session) {
+        const redirectUrl = req.nextUrl.clone();
+        redirectUrl.pathname = '/auth/login';
+        return NextResponse.redirect(redirectUrl);
+      }
+
+      // Check user role and redirect accordingly
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = profile?.role === 'admin' ? '/admin' : '/documents';
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // Protect non-auth routes
+    if (!session && !req.nextUrl.pathname.startsWith('/auth/')) {
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = '/auth/login';
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // Redirect authenticated users away from auth pages
+    if (session && req.nextUrl.pathname.startsWith('/auth/')) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = profile?.role === 'admin' ? '/admin' : '/documents';
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // Protect admin routes
+    if (req.nextUrl.pathname.startsWith('/admin')) {
+      if (!session) {
+        const redirectUrl = req.nextUrl.clone();
+        redirectUrl.pathname = '/auth/login';
+        return NextResponse.redirect(redirectUrl);
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (!profile || profile.role !== 'admin') {
+        const redirectUrl = req.nextUrl.clone();
+        redirectUrl.pathname = '/documents';
+        return NextResponse.redirect(redirectUrl);
+      }
+    }
+
+    return res;
+  } catch (error) {
+    console.error('Middleware error:', error);
+    // In case of any error, redirect to login
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/auth/login';
     return NextResponse.redirect(redirectUrl);
   }
-
-  // If the user is logged in and trying to access auth pages
-  if (session && req.nextUrl.pathname.startsWith('/auth/')) {
-    const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = '/';
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  // Check admin access for /admin routes
-  if (req.nextUrl.pathname.startsWith('/admin')) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('user_id', session?.user?.id)
-      .single();
-
-    if (!profile || profile.role !== 'admin') {
-      const redirectUrl = req.nextUrl.clone();
-      redirectUrl.pathname = '/';
-      return NextResponse.redirect(redirectUrl);
-    }
-  }
-
-  return res;
 }
 
 export const config = {
