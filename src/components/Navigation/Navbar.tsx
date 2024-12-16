@@ -7,6 +7,7 @@ import { useState } from 'react';
 export default function Navbar() {
   const { user, profile, signOut, loading } = useAuth();
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
+  const [isDocsMenuOpen, setIsDocsMenuOpen] = useState(false);
 
   if (loading) {
     return null;
@@ -17,6 +18,14 @@ export default function Navbar() {
   }
 
   const isAdmin = profile?.role === 'admin';
+
+  const documentCategories = [
+    { name: 'Illustrated Parts Catalogs', path: '/documents/parts-catalog' },
+    { name: 'Operating Documents', path: '/documents/operating' },
+    { name: 'User Manuals', path: '/documents/manuals' },
+    { name: 'Maintenance Documents', path: '/documents/maintenance' },
+    { name: 'Training Documents', path: '/documents/training' },
+  ];
 
   return (
     <nav className="bg-white shadow-lg">
@@ -29,12 +38,46 @@ export default function Navbar() {
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <Link
-                href="/documents"
-                className="inline-flex items-center px-1 pt-1 text-gray-900"
-              >
-                Documents
-              </Link>
+              {/* Documents Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsDocsMenuOpen(!isDocsMenuOpen)}
+                  className="inline-flex items-center px-1 pt-1 text-gray-900"
+                >
+                  Documents
+                  <svg
+                    className="ml-2 h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+                {isDocsMenuOpen && (
+                  <div className="absolute z-10 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                    <div className="py-1" role="menu">
+                      {documentCategories.map((category) => (
+                        <Link
+                          key={category.path}
+                          href={category.path}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem"
+                          onClick={() => setIsDocsMenuOpen(false)}
+                        >
+                          {category.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Admin Menu */}
               {isAdmin && (
                 <div className="relative">
                   <button
