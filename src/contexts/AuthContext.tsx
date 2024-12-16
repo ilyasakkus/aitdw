@@ -79,7 +79,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
 
     if (data.user) {
-      router.push('/documents');
+      // Fetch user role from profiles table
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+      
+      setProfile({ 
+        role: profileData?.role || 'user', 
+        email: data.user.email || '' 
+      });
+      
+      if (profileData?.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/documents');
+      }
     }
   };
 
