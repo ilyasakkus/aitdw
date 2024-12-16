@@ -6,14 +6,27 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function LoginPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (user) {
+    if (!loading && user) {
       router.push('/');
+      router.refresh(); // Force a refresh to ensure redirect
     }
-  }, [user, router]);
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (user) {
+    return null; // Will redirect in useEffect
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -28,7 +41,7 @@ export default function LoginPage() {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <div className="sm:mx-auto sm:w-full sm:max-w-md">
             <h2 className="mt-2 mb-6 text-center text-3xl font-extrabold text-gray-900">
-              Sign in to your account
+              Admin Login
             </h2>
           </div>
           <LoginButton />
