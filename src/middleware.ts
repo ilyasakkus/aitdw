@@ -21,15 +21,30 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  // Check admin access for /admin routes
+  if (req.nextUrl.pathname.startsWith('/admin')) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('user_id', session?.user?.id)
+      .single();
+
+    if (!profile || profile.role !== 'admin') {
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = '/';
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
   return res;
 }
 
 export const config = {
   matcher: [
-    // Add routes that require authentication
     '/',
     '/documents/:path*',
     '/profile/:path*',
-    '/auth/:path*'
+    '/auth/:path*',
+    '/admin/:path*'
   ],
 };
