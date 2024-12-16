@@ -7,6 +7,7 @@ import { BREXValidator, BREXValidationResult } from '@/lib/s1000d/brex';
 import BREXValidationPanel from './BREXValidationPanel';
 import * as monaco from 'monaco-editor';
 import { loader } from '@monaco-editor/react';
+import 'monaco-editor/esm/vs/language/xml/monaco.contribution';
 
 // Configure Monaco loader
 loader.config({ monaco });
@@ -101,7 +102,34 @@ export default function XMLEditor({ value, onChange }: XMLEditorProps) {
       });
 
       // Add S1000D XML schema
-      monaco.languages.xml.xmlDefaults.setSchemaConfiguration({
+      monaco.editor.getModels().forEach(model => model.dispose());
+      const xmlDefaults = monaco.languages.getLanguages()
+        .find(lang => lang.id === 'xml')
+        ?.configuration;
+      
+      if (xmlDefaults) {
+        monaco.languages.registerDocumentFormattingEditProvider('xml', {
+          provideDocumentFormattingEdits: (model) => {
+            // Basic XML formatting can be added here if needed
+            return [];
+          }
+        });
+      }
+
+      // Set language configuration using Monaco languages API
+      monaco.languages.setLanguageConfiguration('xml', {
+        brackets: [
+          ['<', '>']
+        ],
+        autoClosingPairs: [
+          { open: '<', close: '>' },
+          { open: '"', close: '"' },
+          { open: "'", close: "'" }
+        ]
+      });
+
+      // Set XML schema configuration
+      monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
         schemas: [{
           uri: 'http://www.s1000d.org/S1000D_4-1/xml_schema_flat/descript.xsd',
           schema: S1000D_XML_SCHEMA,
@@ -120,9 +148,8 @@ export default function XMLEditor({ value, onChange }: XMLEditorProps) {
         });
 
         // BREX validation
-        brexValidator.validate(newValue).then(brexResult => {
-          setBrexResult(brexResult);
-        });
+        const brexResult = brexValidator.validate(newValue);
+        setBrexResult(brexResult);
       });
     }
 
