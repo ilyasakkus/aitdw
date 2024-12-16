@@ -7,10 +7,69 @@ import { BREXValidator, BREXValidationResult } from '@/lib/s1000d/brex';
 import BREXValidationPanel from './BREXValidationPanel';
 import * as monaco from 'monaco-editor';
 import { loader } from '@monaco-editor/react';
-import 'monaco-editor/esm/vs/language/xml/monaco.contribution';
 
 // Configure Monaco loader
 loader.config({ monaco });
+
+// Register XML language support
+if (typeof window !== 'undefined') {
+  monaco.languages.register({ id: 'xml' });
+  monaco.languages.setMonarchTokensProvider('xml', {
+    defaultToken: '',
+    tokenPostfix: '.xml',
+
+    // Brackets and tags
+    brackets: [
+      { token: 'delimiter.bracket', open: '{', close: '}' },
+      { token: 'delimiter.angle', open: '<', close: '>' },
+      { token: 'delimiter.bracket', open: '[', close: ']' },
+      { token: 'delimiter.bracket', open: '(', close: ')' },
+    ],
+
+    // XML tags
+    tags: [],
+
+    // Regular expressions
+    tokenizer: {
+      root: [
+        [/[^<&]+/, ''],
+        { include: '@whitespace' },
+        [/(<)(@tags)/, ['delimiter.angle', { token: 'tag', next: '@tag.$2' }]],
+        [/(<\/)(@tags)(>)/, ['delimiter.angle', 'tag', { token: 'delimiter.angle', next: '@pop' }]],
+        [/(<)([:\w]+)/, ['delimiter.angle', { token: 'tag', next: '@tag.$2' }]],
+        [/(<\/)([:\w]+)(>)/, ['delimiter.angle', 'tag', { token: 'delimiter.angle', next: '@pop' }]],
+        [/(<!\[CDATA\[)/, 'delimiter.cdata', '@cdata'],
+        [/(<!\-\-)/, 'comment', '@comment'],
+        [/(<\?)(\w+)/, ['delimiter.xml', 'tag', '@tag.$2']],
+        [/[<&]/, '']
+      ],
+      tag: [
+        [/[ \t\r\n]+/, ''],
+        [/(type|version|encoding)?(=)/, ['attribute.name', 'delimiter']],
+        [/"([^"]*)"/, 'attribute.value'],
+        [/'([^']*)'/, 'attribute.value'],
+        [/[\w\-]+/, 'attribute.name'],
+        [/\/>/, 'delimiter.angle', '@pop'],
+        [/>/, { token: 'delimiter.angle', next: '@pop' }]
+      ],
+      whitespace: [
+        [/[ \t\r\n]+/, ''],
+        [/<!--/, 'comment', '@comment']
+      ],
+      comment: [
+        [/[^<\-]+/, 'comment.content'],
+        [/-->/, 'comment', '@pop'],
+        [/<!--/, 'comment.content.invalid'],
+        [/[<\-]/, 'comment.content']
+      ],
+      cdata: [
+        [/[^\]]+/, 'cdata'],
+        [/\]\]>/, 'delimiter.cdata', '@pop'],
+        [/./, 'cdata']
+      ]
+    }
+  });
+}
 
 const defaultXML = `<?xml version="1.0" encoding="UTF-8"?>
 <dmodule>
