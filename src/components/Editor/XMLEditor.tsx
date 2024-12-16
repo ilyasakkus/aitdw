@@ -1,10 +1,15 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { S1000DValidator } from '@/lib/s1000d/validator';
 import { BREXValidator, BREXValidationResult } from '@/lib/s1000d/brex';
 import BREXValidationPanel from './BREXValidationPanel';
+import * as monaco from 'monaco-editor';
+import { loader } from '@monaco-editor/react';
+
+// Configure Monaco loader
+loader.config({ monaco });
 
 const defaultXML = `<?xml version="1.0" encoding="UTF-8"?>
 <dmodule>
@@ -26,6 +31,26 @@ const defaultXML = `<?xml version="1.0" encoding="UTF-8"?>
   </identAndStatusSection>
 </dmodule>`;
 
+const S1000D_XML_SCHEMA = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- S1000D Basic Types -->
+  <xs:simpleType name="dmCode">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Z0-9]{3}-[A-Z0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{3}-[A-Z]"/>
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <!-- Main Elements -->
+  <xs:element name="dmodule">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="identAndStatusSection" type="identAndStatusSectionType"/>
+        <xs:element name="content" type="contentType"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>`;
+
 interface XMLEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -44,42 +69,81 @@ export default function XMLEditor({ value, onChange }: XMLEditorProps) {
   const validator = new S1000DValidator();
   const brexValidator = new BREXValidator();
 
-  const handleEditorChange = useCallback(async (newValue: string | undefined) => {
-    if (newValue) {
-      onChange(newValue);
-      
-      // XML Schema validation
-      const validationResult = await validator.validateXML(newValue);
-      setValidationResult(validationResult);
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-      // BREX validation
-      const brexResult = await brexValidator.validate(newValue);
-      setBrexResult(brexResult);
+  useEffect(() => {
+    if (containerRef.current && !editorRef.current) {
+      // Initialize Monaco editor
+      editorRef.current = monaco.editor.create(containerRef.current, {
+        value: value,
+        language: 'xml',
+        theme: 'vs-light',
+        automaticLayout: true,
+        minimap: { enabled: true },
+        scrollBeyondLastLine: false,
+        wordWrap: 'on',
+        wrappingIndent: 'indent',
+        formatOnPaste: true,
+        formatOnType: true,
+        rulers: [80],
+        folding: true,
+        renderWhitespace: 'boundary',
+        contextmenu: true,
+        fontSize: 14,
+        lineNumbers: 'on',
+        lineHeight: 20,
+        renderLineHighlight: 'all',
+        scrollbar: {
+          verticalScrollbarSize: 12,
+          horizontalScrollbarSize: 12,
+        },
+      });
+
+      // Add S1000D XML schema
+      monaco.languages.xml.xmlDefaults.setSchemaConfiguration({
+        schemas: [{
+          uri: 'http://www.s1000d.org/S1000D_4-1/xml_schema_flat/descript.xsd',
+          schema: S1000D_XML_SCHEMA,
+          fileMatch: ['*']
+        }]
+      });
+
+      // Handle content changes
+      editorRef.current.onDidChangeModelContent(() => {
+        const newValue = editorRef.current?.getValue() || '';
+        onChange(newValue);
+        
+        // XML Schema validation
+        validator.validateXML(newValue).then(validationResult => {
+          setValidationResult(validationResult);
+        });
+
+        // BREX validation
+        brexValidator.validate(newValue).then(brexResult => {
+          setBrexResult(brexResult);
+        });
+      });
     }
-  }, [onChange]);
+
+    return () => {
+      editorRef.current?.dispose();
+    };
+  }, [value, onChange]);
+
+  // Update editor content when value prop changes
+  useEffect(() => {
+    if (editorRef.current && value !== editorRef.current.getValue()) {
+      editorRef.current.setValue(value);
+    }
+  }, [value]);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 min-h-[800px] bg-white shadow-lg rounded-lg overflow-hidden">
-        <div className="h-full" style={{ padding: '21mm 30mm', backgroundColor: 'white' }}>
-          <MonacoEditor
-            height="100%"
-            defaultLanguage="xml"
-            value={value}
-            onChange={handleEditorChange}
-            options={{
-              minimap: { enabled: false },
-              lineNumbers: 'on',
-              scrollBeyondLastLine: false,
-              wordWrap: 'on',
-              wrappingStrategy: 'advanced',
-              fontSize: 14,
-              fontFamily: 'Arial',
-              theme: 'vs-light'
-            }}
-          />
-        </div>
+    <div className="h-full flex flex-col bg-white">
+      <div className="p-4 border-b">
+        <h2 className="text-lg font-semibold">XML Editor</h2>
       </div>
+      <div ref={containerRef} className="flex-1" />
       
       {/* Validation Results */}
       <div className="mt-4">

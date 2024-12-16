@@ -3,8 +3,10 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import S1000DEditor from '@/components/Editor/S1000DEditor';
 import XMLEditor from '@/components/Editor/XMLEditor';
 import PDFPreview from '@/components/Preview/PDFPreview';
+import { convertToS1000D } from '@/lib/s1000d/converter';
 
 interface DocumentLayoutProps {
   title: string;
@@ -15,6 +17,7 @@ interface DocumentLayoutProps {
 export default function DocumentLayout({ title, category, defaultXML }: DocumentLayoutProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [content, setContent] = useState('');
   const [xmlContent, setXmlContent] = useState(defaultXML);
   const [activePreview, setActivePreview] = useState<'pdf' | 'xml'>('pdf');
   const [pdfUrl, setPdfUrl] = useState<string | undefined>(undefined);
@@ -67,6 +70,17 @@ export default function DocumentLayout({ title, category, defaultXML }: Document
     };
   }, [xmlContent]);
 
+  const handleEditorChange = (newContent: string) => {
+    setContent(newContent);
+    // Convert rich text content to S1000D XML
+    const xml = convertToS1000D(newContent);
+    setXmlContent(xml);
+  };
+
+  const handleXMLChange = (newXml: string) => {
+    setXmlContent(newXml);
+  };
+
   if (loading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -91,17 +105,17 @@ export default function DocumentLayout({ title, category, defaultXML }: Document
       </div>
 
       <div className="flex h-[calc(100vh-8rem)]">
-        {/* Left Column - Editor */}
+        {/* Left Column - S1000D Editor */}
         <div className="w-1/2 p-4 bg-white border-r border-gray-200">
           <div className="h-full">
-            <XMLEditor 
-              value={xmlContent}
-              onChange={setXmlContent}
+            <S1000DEditor
+              onChange={handleEditorChange}
+              initialContent={content}
             />
           </div>
         </div>
 
-        {/* Right Column - Previews */}
+        {/* Right Column - XML Editor and Previews */}
         <div className="w-1/2 p-4 bg-white">
           <div className="mb-4 flex space-x-2">
             <button
@@ -139,9 +153,10 @@ export default function DocumentLayout({ title, category, defaultXML }: Document
               </div>
             ) : (
               <div className="h-full bg-gray-50 rounded border border-gray-200">
-                <div className="p-4">
-                  <pre className="whitespace-pre-wrap font-mono text-sm">{xmlContent}</pre>
-                </div>
+                <XMLEditor
+                  value={xmlContent}
+                  onChange={handleXMLChange}
+                />
               </div>
             )}
           </div>
