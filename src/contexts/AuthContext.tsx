@@ -79,26 +79,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     console.log('Profile data:', data);
     setProfile(data);
-    const isBossUser = data.username === 'boss';
-    setIsAdmin(isBossUser);
-    console.log('Is admin:', isBossUser);
+    setIsAdmin(data.role === 'admin');
+    console.log('Is admin:', data.role === 'admin');
   };
 
   const signIn = async (username: string, password: string) => {
     try {
-      if (username === 'boss') {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: 'boss@aitdw.app',
-          password: password,
-        });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: `${username}@aitdw.app`,
+        password: password,
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        if (data?.user) {
-          await fetchProfile(data.user.id);
-        }
-      } else {
-        throw new Error('Geçersiz kullanıcı adı');
+      if (data?.user) {
+        await fetchProfile(data.user.id);
       }
     } catch (error: any) {
       console.error('Error signing in:', error.message);
@@ -109,10 +104,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      localStorage.clear(); // Tüm local storage'ı temizle
+      localStorage.clear();
       setUser(null);
       setProfile(null);
       setIsAdmin(false);
+      window.location.href = '/auth/login';
     } catch (error: any) {
       console.error('Error signing out:', error.message);
       throw error;
