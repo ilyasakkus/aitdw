@@ -4,7 +4,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 
 export default function Navbar() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, isAdmin, loading } = useAuth();
+
+  if (loading) {
+    return null;
+  }
 
   return (
     <nav className="bg-gray-800">
@@ -22,7 +26,7 @@ export default function Navbar() {
                 >
                   Documents
                 </Link>
-                {profile?.role === 'admin' && (
+                {isAdmin && (
                   <Link
                     href="/admin"
                     className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
