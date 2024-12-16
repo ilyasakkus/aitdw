@@ -24,27 +24,31 @@ const defaultXML = `<?xml version="1.0" encoding="UTF-8"?>
   </identAndStatusSection>
 </dmodule>`;
 
-export default function XMLEditor() {
-  const [value, setValue] = useState(defaultXML);
+interface XMLEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+export default function XMLEditor({ value, onChange }: XMLEditorProps) {
   const [validationResult, setValidationResult] = useState<{ isValid: boolean; errors: string[] }>({ isValid: true, errors: [] });
   const [brexResult, setBrexResult] = useState<BREXValidationResult>({ isValid: true, violations: [] });
   
   const validator = new S1000DValidator();
   const brexValidator = new BREXValidator();
 
-  const handleEditorChange = useCallback((value: string | undefined) => {
-    if (value) {
-      setValue(value);
+  const handleEditorChange = useCallback((newValue: string | undefined) => {
+    if (newValue) {
+      onChange(newValue);
       
       // XML Schema validation
-      const schemaResult = validator.validateXML(value);
+      const schemaResult = validator.validateXML(newValue);
       setValidationResult(schemaResult);
       
       // BREX validation
-      const brexValidation = brexValidator.validate(value);
+      const brexValidation = brexValidator.validate(newValue);
       setBrexResult(brexValidation);
     }
-  }, []);
+  }, [onChange, validator, brexValidator]);
 
   return (
     <div className="flex flex-col h-full">
@@ -52,7 +56,7 @@ export default function XMLEditor() {
         <Editor
           height="100%"
           defaultLanguage="xml"
-          defaultValue={defaultXML}
+          defaultValue={value}
           onChange={handleEditorChange}
           options={{
             minimap: { enabled: false },
