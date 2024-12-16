@@ -87,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
 
     if (data.user) {
+      setUser(data.user);  // Update user state
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
