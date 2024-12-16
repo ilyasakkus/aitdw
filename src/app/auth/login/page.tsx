@@ -12,7 +12,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && user) {
       router.push('/');
-      router.refresh(); // Force a refresh to ensure redirect
+      router.refresh();
     }
   }, [user, loading, router]);
 
@@ -25,7 +25,7 @@ export default function LoginPage() {
   }
 
   if (user) {
-    return null; // Will redirect in useEffect
+    return null;
   }
 
   return (
@@ -33,7 +33,7 @@ export default function LoginPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
           <h1 className="block text-gray-900 text-5xl font-extrabold mb-2">AITDW</h1>
-          <h2 className="text-gray-600 text-lg">Technical Document Writer</h2>
+          <h2 className="text-gray-600 text-lg">Teknik Doküman Yazarı</h2>
         </div>
       </div>
 
@@ -41,7 +41,7 @@ export default function LoginPage() {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <div className="sm:mx-auto sm:w-full sm:max-w-md">
             <h2 className="mt-2 mb-6 text-center text-3xl font-extrabold text-gray-900">
-              Admin Login
+              Yönetici Girişi
             </h2>
           </div>
           <LoginButton />
@@ -53,7 +53,7 @@ export default function LoginPage() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  Protected Area
+                  Güvenli Alan
                 </span>
               </div>
             </div>

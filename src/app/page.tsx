@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import UserManagement from '@/components/Admin/UserManagement';
 
 export default function Home() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -15,7 +15,16 @@ export default function Home() {
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Çıkış hatası:', error);
+    }
+  };
+
+  if (loading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -24,7 +33,7 @@ export default function Home() {
   }
 
   if (!user || !profile) {
-    return null; // Will redirect in useEffect
+    return null;
   }
 
   return (
@@ -34,16 +43,18 @@ export default function Home() {
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <h1 className="text-2xl font-bold text-indigo-600">AITDW Admin</h1>
+                <h1 className="text-2xl font-bold text-indigo-600">AITDW Yönetim Paneli</h1>
               </div>
             </div>
             <div className="flex items-center">
-              <span className="text-gray-700 mr-4">{profile.username}</span>
+              <span className="text-gray-700 mr-4">
+                Hoş geldiniz, {profile.username}
+              </span>
               <button
-                onClick={() => useAuth().signOut()}
+                onClick={handleSignOut}
                 className="bg-indigo-600 px-4 py-2 text-white rounded-md hover:bg-indigo-700"
               >
-                Sign Out
+                Çıkış Yap
               </button>
             </div>
           </div>
