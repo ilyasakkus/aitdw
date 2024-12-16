@@ -1,4 +1,3 @@
-import { DOMParser } from 'xmldom';
 import * as libxml from 'libxmljs2';
 
 export interface ValidationResult {
@@ -10,16 +9,13 @@ export class S1000DValidator {
   private schema: libxml.Document | null = null;
 
   constructor() {
-    // S1000D şema dosyasını yükle
     try {
       const schemaContent = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <!-- Temel S1000D elemanları -->
   <xs:element name="dmodule">
     <xs:complexType>
       <xs:sequence>
         <xs:element name="identAndStatusSection" type="identAndStatusSectionType"/>
-        <!-- Diğer bölümler buraya eklenecek -->
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -39,34 +35,76 @@ export class S1000DValidator {
 
   <xs:complexType name="dmIdentType">
     <xs:sequence>
-      <xs:element name="dmCode" type="dmCodeType"/>
-      <xs:element name="language" type="languageType"/>
-      <xs:element name="issueInfo" type="issueInfoType"/>
+      <xs:element name="dmCode">
+        <xs:complexType>
+          <xs:attribute name="modelIdentCode" type="xs:string" use="required"/>
+          <xs:attribute name="systemDiffCode" type="xs:string" use="required"/>
+          <xs:attribute name="systemCode" type="xs:string" use="required"/>
+          <xs:attribute name="subSystemCode" type="xs:string" use="required"/>
+          <xs:attribute name="subSubSystemCode" type="xs:string" use="required"/>
+          <xs:attribute name="assyCode" type="xs:string" use="required"/>
+          <xs:attribute name="disassyCode" type="xs:string" use="required"/>
+          <xs:attribute name="disassyCodeVariant" type="xs:string" use="required"/>
+          <xs:attribute name="infoCode" type="xs:string" use="required"/>
+          <xs:attribute name="infoCodeVariant" type="xs:string" use="required"/>
+          <xs:attribute name="itemLocationCode" type="xs:string" use="required"/>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="language">
+        <xs:complexType>
+          <xs:attribute name="languageIsoCode" type="xs:string" use="required"/>
+          <xs:attribute name="countryIsoCode" type="xs:string" use="required"/>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="issueInfo">
+        <xs:complexType>
+          <xs:attribute name="issueNumber" type="xs:string" use="required"/>
+          <xs:attribute name="inWork" type="xs:string" use="required"/>
+        </xs:complexType>
+      </xs:element>
     </xs:sequence>
   </xs:complexType>
 
-  <!-- Diğer tip tanımlamaları -->
+  <xs:complexType name="dmAddressItemsType">
+    <xs:sequence>
+      <xs:element name="issueDate">
+        <xs:complexType>
+          <xs:attribute name="year" type="xs:string" use="required"/>
+          <xs:attribute name="month" type="xs:string" use="required"/>
+          <xs:attribute name="day" type="xs:string" use="required"/>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="dmTitle">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="techName" type="xs:string"/>
+            <xs:element name="infoName" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
 </xs:schema>`;
-      
+
       this.schema = libxml.parseXml(schemaContent);
     } catch (error) {
-      console.error('Şema yükleme hatası:', error);
+      console.error('Error loading schema:', error);
+      this.schema = null;
     }
   }
 
-  public validateXML(xmlContent: string): ValidationResult {
+  validateXML(xml: string): ValidationResult {
     try {
-      const xmlDoc = libxml.parseXml(xmlContent);
+      const xmlDoc = libxml.parseXml(xml);
       
       if (!this.schema) {
         return {
           isValid: false,
-          errors: ['S1000D şeması yüklenemedi']
+          errors: ['Schema not loaded']
         };
       }
 
       const isValid = xmlDoc.validate(this.schema);
-      
       if (!isValid) {
         return {
           isValid: false,
@@ -84,11 +122,5 @@ export class S1000DValidator {
         errors: [(error as Error).message]
       };
     }
-  }
-
-  public validateDMCode(dmCode: string): boolean {
-    // DMC formatı: MODEL-DIFF-SYS-SUBSYS-ASSY-DISASSY-DISVAR-INFO-INFOVAR-ITEMLOC
-    const dmcPattern = /^[A-Z0-9]{1,14}-[A-Z0-9]-[0-9]{2}-[0-9]-[0-9]-[0-9]{2}-[0-9]{2}[A-Z]-[0-9]{3}-[A-Z]-[A-Z]$/;
-    return dmcPattern.test(dmCode);
   }
 }
