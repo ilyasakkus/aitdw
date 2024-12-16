@@ -15,7 +15,7 @@ export default function XMLPreview({ xml }: XMLPreviewProps) {
         .replace(/></g, '>\n<')
         .split('\n')
         .map(line => {
-          const indent = line.match(/^\s*/)[0];
+          const indent = line.match(/^\s*/)?.at(0) ?? '';
           const depth = (line.match(/\/\//g) || []).length;
           return ' '.repeat(depth * 2) + line.trim();
         })
