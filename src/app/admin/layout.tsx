@@ -1,6 +1,6 @@
 'use client';
 
-import AdminGuard from '@/components/Admin/AdminGuard';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export default function AdminLayout({
   children,
@@ -8,8 +8,8 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AdminGuard>
+    <ProtectedRoute requireAdmin={true}>
       {children}
-    </AdminGuard>
+    </ProtectedRoute>
   );
 }
