@@ -9,12 +9,14 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  isAdmin: false
+  isAdmin: false,
+  signIn: async () => {}
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -55,8 +57,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const signIn = async (email: string, password: string) => {
+    const supabase = createClientComponentClient();
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      // Session otomatik olarak güncellenir ve useEffect tetiklenir
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, signIn }}>
       {children}
     </AuthContext.Provider>
   );
