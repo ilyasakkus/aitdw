@@ -1,12 +1,16 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
-export default function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { isAdmin, loading } = useAuth();
+interface AdminGuardProps {
+  children: React.ReactNode;
+}
+
+const AdminGuard = ({ children }: AdminGuardProps) => {
   const router = useRouter();
+  const { user, loading, isAdmin } = useAuth();
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -27,4 +31,6 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
   }
 
   return <>{children}</>;
-}
+};
+
+export default AdminGuard;

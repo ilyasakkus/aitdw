@@ -8,31 +8,12 @@ export async function middleware(req: NextRequest) {
 
   const { data: { session } } = await supabase.auth.getSession();
 
-  // Public routes kontrolü
-  if (req.nextUrl.pathname === '/' || req.nextUrl.pathname.startsWith('/auth/')) {
-    if (session) {
-      // Kullanıcı giriş yapmışsa yönlendir
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-
-      return NextResponse.redirect(new URL(
-        profile?.role === 'admin' ? '/admin' : '/documents', 
-        req.url
-      ));
-    }
-    return res;
-  }
-
-  // Auth gerektiren rotalar için kontrol
-  if (!session) {
-    return NextResponse.redirect(new URL('/auth/login', req.url));
-  }
-
   // Admin rotaları için özel kontrol
   if (req.nextUrl.pathname.startsWith('/admin')) {
+    if (!session) {
+      return NextResponse.redirect(new URL('/auth/login', req.url));
+    }
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -48,11 +29,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/',  // Root path için matcher ekledik
-    '/admin/:path*',
-    '/documents/:path*',
-    '/auth/login',
-    '/auth/register'
-  ]
+  matcher: ['/admin/:path*']
 };
