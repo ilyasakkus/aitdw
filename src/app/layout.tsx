@@ -4,6 +4,7 @@ import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import Navbar from '@/components/Navigation/Navbar'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
 
 const inter = Inter({ subsets: ['latin'] })
 

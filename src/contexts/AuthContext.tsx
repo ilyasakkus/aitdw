@@ -184,19 +184,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setAuthError(null);
 
-      const response = await fetch('/api/signin', {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      if (error) throw error;
 
       if (!data?.user) {
         throw new Error('Kullanıcı bilgileri alınamadı');
@@ -208,8 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(profileData);
       setIsAdmin(profileData.role === 'admin');
 
-      // Yönlendirme
-      router.push(profileData.role === 'admin' ? '/admin' : '/documents');
+      await router.replace(profileData.role === 'admin' ? '/admin' : '/documents');
 
     } catch (error) {
       console.error('Sign in error:', error);
