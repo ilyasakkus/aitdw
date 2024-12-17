@@ -118,34 +118,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initAuth = async () => {
       try {
-        if (mounted) setLoading(true);
-
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        if (!mounted) return;
-
-        if (error) {
-          console.error('Session error:', error);
-          setLoading(false);
-          return;
-        }
+        setLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
 
         if (session?.user) {
-          try {
-            const profileData = await fetchUserProfile(session.user.id, session.user.email || '');
-            if (mounted) {
-              setUser(session.user);
-              setProfile(profileData);
-              setIsAdmin(profileData.role === 'admin');
-            }
-          } catch (error) {
-            console.error('Profile fetch error:', error);
+          const profileData = await fetchUserProfile(session.user.id, session.user.email || '');
+          if (mounted) {
+            setUser(session.user);
+            setProfile(profileData);
+            setIsAdmin(profileData.role === 'admin');
           }
-        } else {
-          setUser(null);
-          setProfile(null);
-          setIsAdmin(false);
         }
+      } catch (error) {
+        console.error('Auth init error:', error);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -154,32 +139,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
-
       if (!mounted) return;
 
       if (event === 'SIGNED_OUT') {
         setUser(null);
         setProfile(null);
         setIsAdmin(false);
-        setLoading(false);
         return;
       }
 
       if (session?.user) {
-        setLoading(true);
-        try {
-          const profileData = await fetchUserProfile(session.user.id, session.user.email || '');
-          if (mounted) {
-            setUser(session.user);
-            setProfile(profileData);
-            setIsAdmin(profileData.role === 'admin');
-          }
-        } catch (error) {
-          console.error('Profile fetch error in auth change:', error);
-        } finally {
-          if (mounted) setLoading(false);
-        }
+        const profileData = await fetchUserProfile(session.user.id, session.user.email || '');
+        setUser(session.user);
+        setProfile(profileData);
+        setIsAdmin(profileData.role === 'admin');
       }
     });
 
@@ -187,21 +160,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [router]);
 
   const signOut = async () => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-
+      
+      // Önce state'i temizle
       setUser(null);
       setProfile(null);
       setIsAdmin(false);
-      router.push('/auth/login');
+      
+      // Sonra supabase logout
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // En son yönlendirme
+      await router.push('/auth/login');
+      router.refresh(); // Router'ı yenile
     } catch (error) {
       console.error('Sign out error:', error);
-      setAuthError(error instanceof Error ? error.message : 'Sign out failed');
     } finally {
       setLoading(false);
     }

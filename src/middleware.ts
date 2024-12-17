@@ -6,23 +6,33 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
 
-  // Skip middleware for static files and api routes
-  if (
-    req.nextUrl.pathname.startsWith('/_next') ||
-    req.nextUrl.pathname.startsWith('/api/')
-  ) {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // Public routes - herkes erişebilir
+  const publicRoutes = ['/auth/login', '/auth/register'];
+  if (publicRoutes.includes(req.nextUrl.pathname)) {
+    if (session) {
+      // Zaten giriş yapmış kullanıcıyı documents'a yönlendir
+      return NextResponse.redirect(new URL('/documents', req.url));
+    }
     return res;
   }
 
-  const { data: { session } } = await supabase.auth.getSession();
+  // Auth kontrolü
+  if (!session) {
+    return NextResponse.redirect(new URL('/auth/login', req.url));
+  }
 
-  // Only handle auth pages
-  if (req.nextUrl.pathname.startsWith('/auth/')) {
-    if (session) {
-      // If user is logged in, redirect away from auth pages
-      const redirectUrl = req.nextUrl.clone();
-      redirectUrl.pathname = '/documents';
-      return NextResponse.redirect(redirectUrl);
+  // Admin route kontrolü
+  if (req.nextUrl.pathname.startsWith('/admin')) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profile?.role !== 'admin') {
+      return NextResponse.redirect(new URL('/documents', req.url));
     }
   }
 
@@ -31,6 +41,9 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/auth/:path*',
-  ],
+    '/admin/:path*',
+    '/documents/:path*',
+    '/auth/login',
+    '/auth/register'
+  ]
 };
