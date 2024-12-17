@@ -44,31 +44,31 @@ export default function Navbar() {
                   href="/documents/parts-catalog"
                   className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/documents/parts-catalog')}`}
                 >
-                  Illustrated Parts Catalogs
+                  Parça Kataloğu
                 </Link>
                 <Link
                   href="/documents/operating"
                   className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/documents/operating')}`}
                 >
-                  Operating Documents
+                  Kullanım Kılavuzu
                 </Link>
                 <Link
                   href="/documents/manuals"
                   className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/documents/manuals')}`}
                 >
-                  User Manuals
+                  Kullanıcı El Kitabı
                 </Link>
                 <Link
                   href="/documents/maintenance"
                   className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/documents/maintenance')}`}
                 >
-                  Maintenance Documents
+                  Bakım Dokümanları
                 </Link>
                 <Link
                   href="/documents/training"
                   className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/documents/training')}`}
                 >
-                  Training Documents
+                  Eğitim Dokümanları
                 </Link>
               </div>
             </div>
@@ -78,7 +78,7 @@ export default function Navbar() {
                   href="/admin"
                   className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/admin')}`}
                 >
-                  Admin
+                  Yönetici
                 </Link>
               )}
               <span className="text-gray-300 mr-2">{profile?.email}</span>

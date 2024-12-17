@@ -32,29 +32,29 @@ const defaultXML = `<?xml version="1.0" encoding="UTF-8"?>
 const chapters = [
   {
     id: '1',
-    title: 'Operating Documents',
+    title: 'Kullanım Kılavuzları',
     level: 0,
     children: [
-      { id: '1.1', title: 'Operating Manual 1', level: 1 },
-      { id: '1.2', title: 'Operating Manual 2', level: 1 }
+      { id: '1.1', title: 'Kullanım Kılavuzu 1', level: 1 },
+      { id: '1.2', title: 'Kullanım Kılavuzu 2', level: 1 }
     ]
   },
   {
     id: '2',
-    title: 'Maintenance Documents',
+    title: 'Bakım Dokümanları',
     level: 0,
     children: [
-      { id: '2.1', title: 'Maintenance Manual 1', level: 1 },
-      { id: '2.2', title: 'Maintenance Manual 2', level: 1 }
+      { id: '2.1', title: 'Bakım Kılavuzu 1', level: 1 },
+      { id: '2.2', title: 'Bakım Kılavuzu 2', level: 1 }
     ]
   },
   {
     id: '3',
-    title: 'Parts Catalogs',
+    title: 'Parça Katalogları',
     level: 0,
     children: [
-      { id: '3.1', title: 'Parts Catalog 1', level: 1 },
-      { id: '3.2', title: 'Parts Catalog 2', level: 1 }
+      { id: '3.1', title: 'Parça Kataloğu 1', level: 1 },
+      { id: '3.2', title: 'Parça Kataloğu 2', level: 1 }
     ]
   }
 ];
@@ -104,8 +104,8 @@ export default function Documents() {
         {/* Title and Tabs */}
         <div className="bg-white border-b border-gray-200">
           <div className="px-4 py-2">
-            <h1 className="text-xl font-semibold text-gray-900">Documents Overview</h1>
-            <p className="text-sm text-gray-500">View and manage all documents</p>
+            <h1 className="text-xl font-semibold text-gray-900">Doküman Görüntüleyici</h1>
+            <p className="text-sm text-gray-500">Tüm dokümanları görüntüle ve yönet</p>
           </div>
           
           {/* Tab buttons */}
@@ -118,7 +118,7 @@ export default function Documents() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Visual Editor
+              Görsel Düzenleyici
             </button>
             <button
               onClick={() => setActiveTab('xml')}
@@ -128,7 +128,7 @@ export default function Documents() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              XML Editor
+              XML Düzenleyici
             </button>
             <button
               onClick={() => setActiveTab('preview')}
@@ -138,7 +138,7 @@ export default function Documents() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Preview
+              Önizleme
             </button>
           </div>
         </div>
@@ -148,7 +148,7 @@ export default function Documents() {
           {activeTab === 'visual' && (
             <div className="h-full p-4">
               <div className="bg-white rounded-lg shadow h-full p-4">
-                Visual editor content here
+                Görsel düzenleyici içeriği burada
               </div>
             </div>
           )}

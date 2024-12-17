@@ -37,8 +37,8 @@ export default function XMLPreview({ xml, previewType }: XMLPreviewProps) {
                 {xml ? (
                   <>
                     <div className="mb-8">
-                      <h1 className="text-3xl font-bold">Technical Document</h1>
-                      <div className="text-gray-600">S1000D Preview</div>
+                      <h1 className="text-3xl font-bold">Teknik Doküman</h1>
+                      <div className="text-gray-600">S1000D Önizleme</div>
                     </div>
                     <div className="space-y-4">
                       {/* Add structured content parsing here */}
@@ -49,7 +49,7 @@ export default function XMLPreview({ xml, previewType }: XMLPreviewProps) {
                   </>
                 ) : (
                   <div className="text-center text-gray-500">
-                    No content to preview
+                    Önizleme için içerik bulunamadı
                   </div>
                 )}
               </div>
