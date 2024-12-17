@@ -101,9 +101,9 @@ export default function DocumentLayout({ title, category, defaultXML }: Document
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-12">
+    <div className="min-h-screen bg-gray-50">
       {/* Title Bar */}
-      <div className="bg-white border-b border-gray-200 sticky top-12 z-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="px-4 py-2">
           <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
           <p className="text-sm text-gray-500">{category}</p>
