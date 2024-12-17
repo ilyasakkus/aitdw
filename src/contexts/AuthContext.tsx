@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const mounted = useRef(true);
 
-  const TIMEOUT_DURATION = 10000; // 10 saniye
+  const TIMEOUT_DURATION = 30000; // 30 saniye
 
   const fetchUserProfile = async (userId: string, userEmail: string) => {
     try {
