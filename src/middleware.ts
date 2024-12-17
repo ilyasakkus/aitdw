@@ -11,16 +11,16 @@ export async function middleware(req: NextRequest) {
 
     if (req.nextUrl.pathname.startsWith('/admin')) {
       if (!session?.user) {
-        throw new Error('No session');
+        return NextResponse.redirect(new URL('/auth/login', req.url));
       }
 
-      const { data, error } = await supabase
+      const { data: profile, error } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', session.user.id)
         .single();
 
-      if (error || data?.role !== 'admin') {
+      if (error || profile?.role !== 'admin') {
         return NextResponse.redirect(new URL('/documents', req.url));
       }
     }
