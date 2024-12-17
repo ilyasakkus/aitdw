@@ -27,22 +27,24 @@ export default function UserManagement() {
     try {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
 
       // Fetch corresponding auth users to get emails
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
       
       if (authError) throw authError;
 
       const usersWithEmail = profiles.map(profile => ({
         ...profile,
-        email: authUsers.users.find(user => user.id === profile.user_id)?.email
+        email: authUsers.find(user => user.id === profile.id)?.email
       }));
 
       setUsers(usersWithEmail);
     } catch (error: any) {
+      console.error('Error fetching users:', error);
       setMessage({ type: 'error', text: error.message });
     }
   };
