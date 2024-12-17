@@ -18,6 +18,14 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
+  // Root path kontrolü
+  if (req.nextUrl.pathname === '/') {
+    if (!session) {
+      return NextResponse.redirect(new URL('/auth/login', req.url));
+    }
+    return NextResponse.redirect(new URL('/documents', req.url));
+  }
+
   // Auth kontrolü
   if (!session) {
     return NextResponse.redirect(new URL('/auth/login', req.url));
@@ -41,6 +49,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',  // Root path için matcher ekledik
     '/admin/:path*',
     '/documents/:path*',
     '/auth/login',
