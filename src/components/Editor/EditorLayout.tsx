@@ -13,7 +13,7 @@ export default function EditorLayout({ initialXML = '' }: EditorLayoutProps) {
   const [previewType, setPreviewType] = useState<'pdf' | 'xml'>('pdf');
 
   return (
-    <div className="flex h-[calc(100vh-3rem)] bg-gray-100 mt-12">
+    <div className="flex h-[calc(100vh-4rem)] bg-gray-100 mt-16">
       {/* Left side - Editor */}
       <div className="w-1/2 p-4 overflow-hidden">
         <XMLEditor value={xml} onChange={setXml} />
