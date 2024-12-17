@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -9,8 +9,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, user, isAdmin } = useAuth();
   const router = useRouter();
+
+  // Session kontrolü
+  useEffect(() => {
+    if (user) {
+      // Kullanıcı zaten giriş yapmışsa, rolüne göre yönlendir
+      router.replace(isAdmin ? '/admin' : '/documents');
+    }
+  }, [user, isAdmin, router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -26,6 +34,15 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  // Eğer kullanıcı zaten giriş yapmışsa, loading göster
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center p-4">

@@ -13,11 +13,10 @@ interface User {
 export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserPassword, setNewUserPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -26,21 +25,16 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     try {
-      console.log('Fetching users...');
-      const { data, error } = await supabase
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-
-      console.log('Fetched users:', data);
-      setUsers(data || []);
+      if (profilesError) throw profilesError;
+      setUsers(profilesData || []);
     } catch (error) {
       console.error('Error fetching users:', error);
+      setError('Kullanıcılar yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -77,7 +71,7 @@ export default function UserManagement() {
         setSuccess('Kullanıcı başarıyla eklendi');
         setNewUserEmail('');
         setNewUserPassword('');
-        fetchUsers();
+        fetchUsers(); // Listeyi yenile
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Kullanıcı eklenirken hata oluştu');
@@ -85,7 +79,11 @@ export default function UserManagement() {
   };
 
   if (loading) {
-    return <div>Yükleniyor...</div>;
+    return (
+      <div className="flex justify-center items-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   return (
@@ -93,37 +91,40 @@ export default function UserManagement() {
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Kullanıcı Yönetimi</h2>
 
       {/* Yeni Kullanıcı Formu */}
-      <form onSubmit={handleAddUser} className="mb-8 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Email</label>
-          <input
-            type="email"
-            value={newUserEmail}
-            onChange={(e) => setNewUserEmail(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Şifre</label>
-          <input
-            type="password"
-            value={newUserPassword}
-            onChange={(e) => setNewUserPassword(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            required
-          />
-        </div>
-        <button
-          type="submit"
-          className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Kullanıcı Ekle
-        </button>
-      </form>
+      <div className="mb-8">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Yeni Kullanıcı Ekle</h3>
+        <form onSubmit={handleAddUser} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <input
+              type="email"
+              value={newUserEmail}
+              onChange={(e) => setNewUserEmail(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Şifre</label>
+            <input
+              type="password"
+              value={newUserPassword}
+              onChange={(e) => setNewUserPassword(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Kullanıcı Ekle
+          </button>
+        </form>
+      </div>
 
       {error && (
-        <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4">
+        <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -138,7 +139,7 @@ export default function UserManagement() {
       )}
 
       {success && (
-        <div className="mb-4 bg-green-50 border-l-4 border-green-400 p-4">
+        <div className="mb-4 bg-green-50 border-l-4 border-green-400 p-4 rounded">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
@@ -159,13 +160,13 @@ export default function UserManagement() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Email
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Rol
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Kayıt Tarihi
                 </th>
               </tr>
@@ -173,14 +174,18 @@ export default function UserManagement() {
             <tbody className="bg-white divide-y divide-gray-200">
               {users.map((user) => (
                 <tr key={user.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {user.email}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {user.role}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      user.role === 'admin' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {user.role === 'admin' ? 'Yönetici' : 'Kullanıcı'}
+                    </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(user.created_at).toLocaleDateString()}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(user.created_at).toLocaleDateString('tr-TR')}
                   </td>
                 </tr>
               ))}
@@ -188,6 +193,12 @@ export default function UserManagement() {
           </table>
         </div>
       </div>
+
+      {users.length === 0 && (
+        <div className="text-center py-4 text-gray-500">
+          Henüz hiç kullanıcı bulunmuyor.
+        </div>
+      )}
     </div>
   );
 }

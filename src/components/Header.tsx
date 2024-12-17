@@ -17,15 +17,14 @@ export default function Header() {
               </Link>
             </div>
             <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              {user && !isAdmin && (
-                <Link
-                  href="/documents"
-                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                >
-                  Dökümanlar
-                </Link>
-              )}
+              <Link
+                href="/documents"
+                className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
+                Dökümanlar
+              </Link>
               
+              {/* Admin menüsü */}
               {isAdmin && (
                 <Link
                   href="/admin"
