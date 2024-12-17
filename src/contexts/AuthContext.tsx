@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (profileError) throw profileError;
 
       const role = (profileData?.role || 'user') as Role;
+      console.log('Fetched Profile:', { userId, role }); // Debug log
       return { role, email: userEmail };
     } catch (error) {
       console.error('Profile fetch error:', error);
@@ -179,14 +180,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
 
       if (data.user) {
-        await updateUserSession(data.user);
-        
         const profileData = await fetchUserProfile(data.user.id, data.user.email || '');
-        const isAdminUser = profileData.role === 'admin';
+        console.log('SignIn - Profile Data:', profileData); // Debug log
         
-        if (isAdminUser) {
+        await updateUserSession(data.user);
+        console.log('SignIn - IsAdmin State:', isAdmin); // Debug log
+        
+        // Doğrudan profileData'yı kullan
+        if (profileData.role === 'admin') {
+          console.log('Redirecting to admin panel'); // Debug log
           router.push('/admin');
         } else {
+          console.log('Redirecting to documents'); // Debug log
           router.push('/documents');
         }
       }
