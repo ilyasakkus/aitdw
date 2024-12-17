@@ -16,10 +16,11 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     fetch: (...args) => {
-      return fetch(...args)
-    },
-    headers: {
-      'x-client-info': 'supabase-js-web'
+      const [url, config] = args;
+      return fetch(url, {
+        ...config,
+        credentials: 'include'
+      });
     }
   }
 })

@@ -118,8 +118,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initAuth = async () => {
       try {
+        if (mounted) setLoading(true);
+
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
+        if (!mounted) return;
+
         if (error) {
           console.error('Session error:', error);
           setLoading(false);
@@ -127,15 +131,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (session?.user) {
-          const profileData = await fetchUserProfile(session.user.id, session.user.email || '');
-          if (mounted) {
-            setUser(session.user);
-            setProfile(profileData);
-            setIsAdmin(profileData.role === 'admin');
+          try {
+            const profileData = await fetchUserProfile(session.user.id, session.user.email || '');
+            if (mounted) {
+              setUser(session.user);
+              setProfile(profileData);
+              setIsAdmin(profileData.role === 'admin');
+            }
+          } catch (error) {
+            console.error('Profile fetch error:', error);
           }
+        } else {
+          setUser(null);
+          setProfile(null);
+          setIsAdmin(false);
         }
-      } catch (error) {
-        console.error('Auth error:', error);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -144,11 +154,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+
       if (!mounted) return;
 
-      console.log('Auth state changed:', event);
-      
-      if (event === 'SIGNED_OUT' || !session) {
+      if (event === 'SIGNED_OUT') {
         setUser(null);
         setProfile(null);
         setIsAdmin(false);
@@ -156,12 +166,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (session) {
-        const profileData = await fetchUserProfile(session.user.id, session.user.email || '');
-        setUser(session.user);
-        setProfile(profileData);
-        setIsAdmin(profileData.role === 'admin');
-        setLoading(false);
+      if (session?.user) {
+        setLoading(true);
+        try {
+          const profileData = await fetchUserProfile(session.user.id, session.user.email || '');
+          if (mounted) {
+            setUser(session.user);
+            setProfile(profileData);
+            setIsAdmin(profileData.role === 'admin');
+          }
+        } catch (error) {
+          console.error('Profile fetch error in auth change:', error);
+        } finally {
+          if (mounted) setLoading(false);
+        }
       }
     });
 
