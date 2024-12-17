@@ -5,21 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function AdminPage() {
-  const { user, profile, loading } = useAuth();
+  const { isAdmin, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/auth/login');
+    if (!loading && !isAdmin) {
+      router.push('/documents');
     }
-  }, [loading, user, router]);
-
-  useEffect(() => {
-    // Check for admin access
-    if (!loading && user && !(profile?.role === 'admin' || user.email?.startsWith('boss'))) {
-      router.replace('/');
-    }
-  }, [loading, user, profile, router]);
+  }, [isAdmin, loading, router]);
 
   if (loading) {
     return (
@@ -27,6 +20,10 @@ export default function AdminPage() {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
+  }
+
+  if (!isAdmin) {
+    return null; // Router will redirect
   }
 
   return (
