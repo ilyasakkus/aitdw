@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+import { ChevronRight, ChevronDown, ChevronLeft } from 'lucide-react';
 
 interface TreeNode {
   id: string;
