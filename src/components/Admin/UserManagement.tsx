@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -18,8 +20,14 @@ export default function UserManagement() {
     department: ''
   });
   const [editingUser, setEditingUser] = useState<string | null>(null);
+  const { isAdmin } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
+    if (!isAdmin) {
+      router.push('/documents');
+      return;
+    }
     fetchUsers();
     
     // Cleanup function to reset loading state when component unmounts
@@ -27,7 +35,7 @@ export default function UserManagement() {
       setLoading(false);
       setMessage(null);
     };
-  }, []);
+  }, [isAdmin, router]);
 
   const fetchUsers = async () => {
     setLoading(true);
