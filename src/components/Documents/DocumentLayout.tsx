@@ -23,6 +23,40 @@ export default function DocumentLayout({ title, category, defaultXML }: Document
   const [pdfUrl, setPdfUrl] = useState<string | undefined>(undefined);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
+  // Sample chapters data structure
+  const [chapters] = useState([
+    {
+      id: '1',
+      title: 'Chapter 1',
+      level: 0,
+      children: [
+        {
+          id: '1.1',
+          title: 'Section 1.1',
+          level: 1,
+          children: [
+            { id: '1.1.1', title: 'Subsection 1.1.1', level: 2 },
+            { id: '1.1.2', title: 'Subsection 1.1.2', level: 2 }
+          ]
+        },
+        {
+          id: '1.2',
+          title: 'Section 1.2',
+          level: 1
+        }
+      ]
+    },
+    {
+      id: '2',
+      title: 'Chapter 2',
+      level: 0,
+      children: [
+        { id: '2.1', title: 'Section 2.1', level: 1 },
+        { id: '2.2', title: 'Section 2.2', level: 1 }
+      ]
+    }
+  ]);
+
   useEffect(() => {
     if (!loading && !user) {
       router.replace('/auth/login');
@@ -114,7 +148,11 @@ export default function DocumentLayout({ title, category, defaultXML }: Document
         )}
         {activeTab === 'xml' && (
           <div className="h-full">
-            <XMLEditor value={xmlContent} onChange={handleXMLChange} />
+            <XMLEditor
+              value={xmlContent}
+              onChange={handleXMLChange}
+              chapters={chapters}
+            />
           </div>
         )}
         {activeTab === 'preview' && (

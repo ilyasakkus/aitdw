@@ -31,6 +31,7 @@
     "ace-builds": "^1.36.5",
     "autoprefixer": "^10.4.16",
     "fast-xml-parser": "^4.3.2",
+    "lucide-react": "^0.468.0",
     "monaco-editor": "^0.52.2",
     "next": "14.0.4",
     "pdfjs-dist": "^3.4.120",
