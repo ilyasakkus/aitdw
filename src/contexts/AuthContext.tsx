@@ -91,21 +91,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initAuth = async () => {
       try {
-        const timeoutPromise = new Promise((_, reject) => {
-          timeoutId = setTimeout(() => {
-            reject(new Error('Auth initialization timeout'));
-          }, TIMEOUT_DURATION);
-        });
-
         setLoading(true);
 
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (!mounted.current) return;
-        if (error) throw error;
+        // Basit timeout kontrolü
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_DURATION);
 
-        const session = data.session;
-        await updateUserSession(session?.user || null);
+        try {
+          const { data, error } = await supabase.auth.getSession();
+          clearTimeout(timeoutId);
+
+          if (!mounted.current) return;
+          if (error) throw error;
+
+          await updateUserSession(data.session?.user || null);
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') {
+            throw new Error('Auth initialization timeout');
+          }
+          throw error;
+        }
       } catch (error) {
         console.error('Auth initialization error:', error);
         setAuthError(error instanceof Error ? error.message : 'Authentication error occurred');
@@ -114,7 +119,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (mounted.current) {
           setLoading(false);
         }
-        clearTimeout(timeoutId);
       }
     };
 

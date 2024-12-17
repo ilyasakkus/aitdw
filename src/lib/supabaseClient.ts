@@ -1,21 +1,23 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database.types'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
-}
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   },
-  db: {
-    schema: 'public'
+  global: {
+    fetch: (...args) => {
+      return fetch(...args)
+    },
+    headers: {
+      'x-client-info': 'supabase-js-web'
+    }
   }
 })
 
