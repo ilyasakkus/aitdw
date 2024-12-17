@@ -33,7 +33,7 @@ export default function UserManagement() {
       if (profilesError) throw profilesError;
 
       // Fetch corresponding auth users to get emails
-      const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
+      const { data: { users: authUsers }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
       
       if (authError) throw authError;
 
@@ -62,7 +62,7 @@ export default function UserManagement() {
     setMessage(null);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: formData.email,
         password: formData.password,
         email_confirm: true
@@ -96,7 +96,7 @@ export default function UserManagement() {
     if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) return;
 
     try {
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
       if (authError) throw authError;
 
       const { error: profileError } = await supabase
