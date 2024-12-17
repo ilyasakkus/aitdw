@@ -49,13 +49,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        throw profileError;
+      }
 
-      const role = (profileData?.role || 'user') as Role;
-      console.log('Fetched Profile:', { userId, role }); // Debug log
-      return { role, email: userEmail };
+      console.log('Fetched Profile Data:', profileData); // Debug için
+
+      if (!profileData) {
+        // Profil bulunamadıysa yeni profil oluştur
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert([
+            { id: userId, role: 'user' }
+          ])
+          .single();
+
+        if (insertError) throw insertError;
+        return { role: 'user' as Role, email: userEmail };
+      }
+
+      return { role: profileData.role as Role, email: userEmail };
     } catch (error) {
-      console.error('Profile fetch error:', error);
+      console.error('Profile fetch/create error:', error);
       return { role: 'user' as Role, email: userEmail };
     }
   };
@@ -89,43 +105,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    mounted.current = true;
-    let timeoutId: NodeJS.Timeout;
+    let mounted = true;
 
     const initAuth = async () => {
       try {
-        if (!mounted.current) return;
-        setLoading(true);
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session error:', error);
+          setLoading(false);
+          return;
+        }
 
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-
-        if (sessionError) throw sessionError;
-        if (!mounted.current) return;
-
-        if (sessionData.session?.user) {
-          await updateUserSession(sessionData.session.user);
-        } else {
-          setUser(null);
-          setProfile(null);
-          setIsAdmin(false);
+        if (session?.user) {
+          const profileData = await fetchUserProfile(session.user.id, session.user.email || '');
+          if (mounted) {
+            setUser(session.user);
+            setProfile(profileData);
+            setIsAdmin(profileData.role === 'admin');
+          }
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
-        setAuthError(error instanceof Error ? error.message : 'Authentication error occurred');
-        await updateUserSession(null);
+        console.error('Auth error:', error);
       } finally {
-        if (mounted.current) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     };
 
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted.current) return;
+      if (!mounted) return;
 
-      if (event === 'SIGNED_OUT') {
+      console.log('Auth state changed:', event);
+      
+      if (event === 'SIGNED_OUT' || !session) {
         setUser(null);
         setProfile(null);
         setIsAdmin(false);
@@ -133,18 +147,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      try {
-        await updateUserSession(session?.user || null);
-      } catch (error) {
-        console.error('Auth state change error:', error);
-      } finally {
+      if (session) {
+        const profileData = await fetchUserProfile(session.user.id, session.user.email || '');
+        setUser(session.user);
+        setProfile(profileData);
+        setIsAdmin(profileData.role === 'admin');
         setLoading(false);
       }
     });
 
     return () => {
-      mounted.current = false;
-      clearTimeout(timeoutId);
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);

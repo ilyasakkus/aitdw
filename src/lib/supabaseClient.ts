@@ -8,8 +8,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce'
+    detectSessionInUrl: false,
+    flowType: 'pkce',
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined
   },
   global: {
     fetch: (...args) => {
