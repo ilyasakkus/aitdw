@@ -30,6 +30,7 @@ export default function UserManagement() {
   }, []);
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
@@ -52,6 +53,8 @@ export default function UserManagement() {
     } catch (error: any) {
       console.error('Error fetching users:', error);
       setMessage({ type: 'error', text: error.message });
+    } finally {
+      setLoading(false);
     }
   };
 
