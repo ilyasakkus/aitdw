@@ -43,42 +43,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = async (userId: string, userEmail: string) => {
     try {
-      console.log('Fetching profile for user:', userId); // Debug log
+      console.log('Fetching profile for user:', userId);
       
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
+        .select('*')
         .eq('id', userId)
         .single();
 
       if (profileError) {
         console.error('Profile fetch error:', profileError);
+        if (profileError.code === 'PGRST116') {
+          console.log('Creating new profile for user:', userId);
+          const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert([
+              { id: userId, role: 'user', email: userEmail }
+            ])
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('Profile creation error:', insertError);
+            throw insertError;
+          }
+
+          console.log('New profile created:', newProfile);
+          return { role: 'user' as Role, email: userEmail };
+        }
         throw profileError;
       }
 
-      console.log('Raw profile data:', profileData); // Debug log
-
-      if (!profileData) {
-        console.log('No profile found, creating new profile...'); // Debug log
-        const { data: newProfile, error: insertError } = await supabase
-          .from('profiles')
-          .insert([
-            { id: userId, role: 'user' }
-          ])
-          .single();
-
-        if (insertError) {
-          console.error('Profile creation error:', insertError); // Debug log
-          throw insertError;
-        }
-        
-        console.log('New profile created:', newProfile); // Debug log
-        return { role: 'user' as Role, email: userEmail };
-      }
-
-      const result = { role: profileData.role as Role, email: userEmail };
-      console.log('Returning profile data:', result); // Debug log
-      return result;
+      console.log('Profile data fetched:', profileData);
+      return { role: profileData.role as Role, email: userEmail };
     } catch (error) {
       console.error('Profile fetch/create error:', error);
       return { role: 'user' as Role, email: userEmail };
@@ -187,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('Starting sign in process...'); // Debug log
+      console.log('Starting sign in process...');
       setLoading(true);
       setAuthError(null);
       
@@ -197,46 +194,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
-        console.error('Supabase auth error:', error); // Debug log
+        console.error('Sign in error:', error);
         throw error;
       }
 
-      console.log('Auth successful, user:', data.user); // Debug log
+      console.log('Auth successful, user:', data.user?.id);
 
       if (data.user) {
         try {
           const profileData = await fetchUserProfile(data.user.id, data.user.email || '');
-          console.log('Fetched profile data:', profileData); // Debug log
+          console.log('Profile data fetched:', profileData);
 
-          // State güncellemelerini yap
           setUser(data.user);
           setProfile(profileData);
           setIsAdmin(profileData.role === 'admin');
-          
-          // Kısa bir gecikme ekleyelim state'in güncellenmesi için
+
           await new Promise(resolve => setTimeout(resolve, 100));
-          
+
           if (profileData.role === 'admin') {
-            console.log('User is admin, redirecting to admin panel...'); // Debug log
+            console.log('Redirecting to admin...');
             await router.push('/admin');
           } else {
-            console.log('User is not admin, redirecting to documents...'); // Debug log
+            console.log('Redirecting to documents...');
             await router.push('/documents');
           }
-          
-          console.log('Redirect completed'); // Debug log
         } catch (profileError) {
-          console.error('Profile fetch/update error:', profileError); // Debug log
+          console.error('Profile processing error:', profileError);
+          setAuthError('Profil bilgileri alınamadı');
           throw profileError;
         }
       }
     } catch (error) {
       console.error('Sign in process error:', error);
-      setAuthError(error instanceof Error ? error.message : 'Sign in failed');
+      setAuthError(error instanceof Error ? error.message : 'Giriş başarısız');
       throw error;
     } finally {
-      console.log('Sign in process completed'); // Debug log
       setLoading(false);
+      console.log('Sign in process completed');
     }
   };
 
