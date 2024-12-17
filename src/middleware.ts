@@ -27,7 +27,7 @@ export async function middleware(req: NextRequest) {
 
     return res;
   } catch (error) {
-    console.error('Auth error:', error);
+    console.error('Middleware error:', error);
     return NextResponse.redirect(new URL('/auth/login', req.url));
   }
 }
