@@ -8,30 +8,30 @@ export async function middleware(req: NextRequest) {
 
   const { data: { session } } = await supabase.auth.getSession();
 
-  // Public routes - herkes erişebilir
-  const publicRoutes = ['/auth/login', '/auth/register'];
-  if (publicRoutes.includes(req.nextUrl.pathname)) {
+  // Public routes kontrolü
+  if (req.nextUrl.pathname === '/' || req.nextUrl.pathname.startsWith('/auth/')) {
     if (session) {
-      // Zaten giriş yapmış kullanıcıyı documents'a yönlendir
-      return NextResponse.redirect(new URL('/documents', req.url));
+      // Kullanıcı giriş yapmışsa yönlendir
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      return NextResponse.redirect(new URL(
+        profile?.role === 'admin' ? '/admin' : '/documents', 
+        req.url
+      ));
     }
     return res;
   }
 
-  // Root path kontrolü
-  if (req.nextUrl.pathname === '/') {
-    if (!session) {
-      return NextResponse.redirect(new URL('/auth/login', req.url));
-    }
-    return NextResponse.redirect(new URL('/documents', req.url));
-  }
-
-  // Auth kontrolü
+  // Auth gerektiren rotalar için kontrol
   if (!session) {
     return NextResponse.redirect(new URL('/auth/login', req.url));
   }
 
-  // Admin route kontrolü
+  // Admin rotaları için özel kontrol
   if (req.nextUrl.pathname.startsWith('/admin')) {
     const { data: profile } = await supabase
       .from('profiles')
