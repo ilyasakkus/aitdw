@@ -24,42 +24,42 @@ export default function Navbar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-gray-800 z-50">
-      <div className="mx-auto px-4">
-        <div className="relative flex h-16 items-center justify-between">
+      <div className="mx-auto px-2">
+        <div className="relative flex h-12 items-center justify-between">
           <div className="flex flex-1 items-center">
             <div className="flex flex-shrink-0 items-center">
-              <Link href="/" className="text-white font-bold text-xl">
+              <Link href="/" className="text-white font-bold text-base">
                 AITDW
               </Link>
             </div>
-            <div className="ml-6 flex space-x-4">
+            <div className="ml-4 flex space-x-2">
               <Link
                 href="/documents/parts-catalog"
-                className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/documents/parts-catalog')}`}
+                className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/documents/parts-catalog')}`}
               >
                 Illustrated Parts Catalogs
               </Link>
               <Link
                 href="/documents/operating"
-                className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/documents/operating')}`}
+                className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/documents/operating')}`}
               >
                 Operating Documents
               </Link>
               <Link
                 href="/documents/manuals"
-                className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/documents/manuals')}`}
+                className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/documents/manuals')}`}
               >
                 User Manuals
               </Link>
               <Link
                 href="/documents/maintenance"
-                className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/documents/maintenance')}`}
+                className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/documents/maintenance')}`}
               >
                 Maintenance Documents
               </Link>
               <Link
                 href="/documents/training"
-                className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/documents/training')}`}
+                className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/documents/training')}`}
               >
                 Training Documents
               </Link>
@@ -69,15 +69,15 @@ export default function Navbar() {
             {isAdmin && (
               <Link
                 href="/admin"
-                className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/admin')}`}
+                className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/admin')}`}
               >
                 Admin
               </Link>
             )}
-            <span className="text-gray-300 mr-4">{profile?.email}</span>
+            <span className="text-gray-300 mr-2">{profile?.email}</span>
             <button
               onClick={() => signOut()}
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
+              className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors"
             >
               Çıkış Yap
             </button>
