@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -74,19 +74,18 @@ export default function UserManagement() {
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
-          user_id: authData.user.id,
-          username: formData.username,
-          full_name: formData.fullName,
-          department: formData.department,
+          id: authData.user.id,
+          email: formData.email,
           role: 'writer'
         });
 
       if (profileError) throw profileError;
 
       setMessage({ type: 'success', text: 'Teknik yazar başarıyla oluşturuldu!' });
-      setFormData({ email: '', username: '', password: '', fullName: '', department: '' });
+      setFormData({ email: '', password: '', username: '', fullName: '', department: '' });
       fetchUsers(); // Refresh user list
     } catch (error: any) {
+      console.error('Error creating user:', error);
       setMessage({ type: 'error', text: error.message });
     } finally {
       setLoading(false);
@@ -103,13 +102,14 @@ export default function UserManagement() {
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
-        .eq('user_id', userId);
+        .eq('id', userId);
       
       if (profileError) throw profileError;
 
       setMessage({ type: 'success', text: 'Kullanıcı başarıyla silindi!' });
       fetchUsers(); // Refresh user list
     } catch (error: any) {
+      console.error('Error deleting user:', error);
       setMessage({ type: 'error', text: error.message });
     }
   };
