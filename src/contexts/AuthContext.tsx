@@ -38,11 +38,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null);
   const router = useRouter();
 
-  const checkAdminStatus = (email: string, role: Role) => {
-    return role === 'admin' || email.startsWith('boss');
-  };
+  const TIMEOUT_DURATION = 10000; // 10 saniye
 
-  const fetchUserProfile = async (userId: string, userEmail: string): Promise<{ role: Role; email: string }> => {
+  const fetchUserProfile = async (userId: string, userEmail: string) => {
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -50,51 +48,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .single();
 
-      if (profileError) {
-        console.error('Profile fetch error:', profileError);
-        const defaultRole = 'user' as Role;
-        return { role: defaultRole, email: userEmail };
-      }
+      if (profileError) throw profileError;
 
       const role = (profileData?.role || 'user') as Role;
-      const isAdminUser = checkAdminStatus(userEmail, role);
-      setIsAdmin(isAdminUser);
-
       return { role, email: userEmail };
     } catch (error) {
       console.error('Profile fetch error:', error);
-      const defaultRole = 'user' as Role;
-      return { role: defaultRole, email: userEmail };
+      return { role: 'user' as Role, email: userEmail };
     }
   };
 
   const updateUserSession = async (sessionUser: User | null) => {
-    if (!sessionUser) {
+    try {
+      if (!sessionUser) {
+        setUser(null);
+        setProfile(null);
+        setIsAdmin(false);
+        return;
+      }
+
+      setUser(sessionUser);
+      const profileData = await fetchUserProfile(sessionUser.id, sessionUser.email || '');
+      setProfile(profileData);
+      setIsAdmin(profileData.role === 'admin');
+    } catch (error) {
+      console.error('Session update error:', error);
       setUser(null);
       setProfile(null);
       setIsAdmin(false);
-      return;
     }
-
-    setUser(sessionUser);
-    const profileData = await fetchUserProfile(sessionUser.id, sessionUser.email || '');
-    setProfile(profileData);
-    setIsAdmin(checkAdminStatus(sessionUser.email || '', profileData.role));
   };
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const initAuth = async () => {
       try {
+        const timeoutPromise = new Promise((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(new Error('Auth initialization timeout'));
+          }, TIMEOUT_DURATION);
+        });
+
         setLoading(true);
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
+
+        const sessionPromise = supabase.auth.getSession();
+        const result = await Promise.race([sessionPromise, timeoutPromise]) as Awaited<typeof sessionPromise>;
+
+        if (!mounted) return;
+
+        const { data: { session }, error: sessionError } = result;
+
         if (sessionError) throw sessionError;
 
-        if (mounted) {
-          await updateUserSession(session?.user || null);
-        }
+        await updateUserSession(session?.user || null);
       } catch (error) {
         console.error('Auth initialization error:', error);
         setAuthError(error instanceof Error ? error.message : 'Authentication error occurred');
@@ -103,6 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (mounted) {
           setLoading(false);
         }
+        clearTimeout(timeoutId);
       }
     };
 
@@ -111,20 +120,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setProfile(null);
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
+
       try {
         await updateUserSession(session?.user || null);
       } catch (error) {
         console.error('Auth state change error:', error);
-        setAuthError(error instanceof Error ? error.message : 'Authentication error occurred');
-        await updateUserSession(null);
+      } finally {
+        setLoading(false);
       }
     });
 
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
+
+  const signOut = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      setUser(null);
+      setProfile(null);
+      setIsAdmin(false);
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Sign out error:', error);
+      setAuthError(error instanceof Error ? error.message : 'Sign out failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -141,7 +177,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         await updateUserSession(data.user);
         
-        // Redirect based on role
         if (isAdmin) {
           router.push('/admin');
         } else {
@@ -152,22 +187,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Sign in error:', error);
       setAuthError(error instanceof Error ? error.message : 'Sign in failed');
       throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      await updateUserSession(null);
-      router.push('/auth/login');
-    } catch (error) {
-      console.error('Sign out error:', error);
-      setAuthError(error instanceof Error ? error.message : 'Sign out failed');
     } finally {
       setLoading(false);
     }
