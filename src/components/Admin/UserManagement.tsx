@@ -10,7 +10,7 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 
 export default function UserManagement() {
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<(Profile & { email?: string })[]>([]);
+  const [users, setUsers] = useState<(Profile & { email?: string, username?: string })[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [formData, setFormData] = useState({
     email: '',
@@ -54,7 +54,8 @@ export default function UserManagement() {
 
       const usersWithEmail = profiles.map(profile => ({
         ...profile,
-        email: authUsers.find(user => user.id === profile.id)?.email
+        email: authUsers.find(user => user.id === profile.id)?.email,
+        username: authUsers.find(user => user.id === profile.id)?.user_metadata?.username || ''
       }));
 
       setUsers(usersWithEmail);
@@ -162,7 +163,8 @@ export default function UserManagement() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kullanıcı</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kullanıcı Adı</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
               </tr>
@@ -171,10 +173,10 @@ export default function UserManagement() {
               {users.map((user) => (
                 <tr key={user.id}>
                   <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <div className="text-sm font-medium text-gray-900">{user.email}</div>
-                      <div className="text-sm text-gray-500">Role: {user.role}</div>
-                    </div>
+                    <div className="text-sm text-gray-900">{user.email}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">{user.username || '-'}</div>
                   </td>
                   <td className="px-6 py-4">
                     <select
