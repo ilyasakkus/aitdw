@@ -195,11 +195,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         const profileData = await fetchUserProfile(data.user.id, data.user.email || '');
         console.log('SignIn - Profile Data:', profileData); // Debug log
+
+        // State güncellemelerini yap
+        setUser(data.user);
+        setProfile(profileData);
+        setIsAdmin(profileData.role === 'admin');
         
-        await updateUserSession(data.user);
-        console.log('SignIn - IsAdmin State:', isAdmin); // Debug log
-        
-        // Doğrudan profileData'yı kullan
+        // Doğrudan profileData'ya göre yönlendir
         if (profileData.role === 'admin') {
           console.log('Redirecting to admin panel'); // Debug log
           router.push('/admin');
