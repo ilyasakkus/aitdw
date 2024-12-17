@@ -114,17 +114,24 @@ export default function UserManagement() {
     
     setLoading(true);
     try {
-      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-      if (authError) throw authError;
-
-      const { error: profileError } = await supabase
+      // First delete from profiles table
+      const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .delete()
         .eq('user_id', userId);
       
       if (profileError) throw profileError;
 
-      setMessage({ type: 'success', text: 'Kullanıcı başarıyla silindi!' });
+      // Then delete from auth
+      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      if (authError) {
+        // If auth deletion fails, show error but don't throw
+        console.error('Error deleting auth user:', authError);
+        setMessage({ type: 'error', text: 'Kullanıcı auth sisteminden silinemedi: ' + authError.message });
+      } else {
+        setMessage({ type: 'success', text: 'Kullanıcı başarıyla silindi!' });
+      }
+
       await fetchUsers(); // Refresh user list
     } catch (error: any) {
       console.error('Error deleting user:', error);
