@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const router = useRouter();
+  const mounted = useRef(true);
 
   const TIMEOUT_DURATION = 10000; // 10 saniye
 
@@ -69,18 +70,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(sessionUser);
       const profileData = await fetchUserProfile(sessionUser.id, sessionUser.email || '');
-      setProfile(profileData);
-      setIsAdmin(profileData.role === 'admin');
+      
+      if (mounted.current) {
+        setProfile(profileData);
+        setIsAdmin(profileData.role === 'admin');
+      }
     } catch (error) {
       console.error('Session update error:', error);
-      setUser(null);
-      setProfile(null);
-      setIsAdmin(false);
+      if (mounted.current) {
+        setUser(null);
+        setProfile(null);
+        setIsAdmin(false);
+      }
     }
   };
 
   useEffect(() => {
-    let mounted = true;
+    mounted.current = true;
     let timeoutId: NodeJS.Timeout;
 
     const initAuth = async () => {
@@ -93,22 +99,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setLoading(true);
 
-        const sessionPromise = supabase.auth.getSession();
-        const result = await Promise.race([sessionPromise, timeoutPromise]) as Awaited<typeof sessionPromise>;
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (!mounted.current) return;
+        if (error) throw error;
 
-        if (!mounted) return;
-
-        const { data: { session }, error: sessionError } = result;
-
-        if (sessionError) throw sessionError;
-
+        const session = data.session;
         await updateUserSession(session?.user || null);
       } catch (error) {
         console.error('Auth initialization error:', error);
         setAuthError(error instanceof Error ? error.message : 'Authentication error occurred');
         await updateUserSession(null);
       } finally {
-        if (mounted) {
+        if (mounted.current) {
           setLoading(false);
         }
         clearTimeout(timeoutId);
@@ -118,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
+      if (!mounted.current) return;
 
       if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -138,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
-      mounted = false;
+      mounted.current = false;
       clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
