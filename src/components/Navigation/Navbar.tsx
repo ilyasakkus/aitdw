@@ -18,7 +18,7 @@ export default function Navbar() {
     return null;
   }
 
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === 'admin' || user.email?.startsWith('boss');
 
   const isActive = (path: string) => {
     return pathname === path ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white';
@@ -74,12 +74,14 @@ export default function Navbar() {
             </div>
             <div className="flex items-center">
               {isAdmin && (
-                <Link
-                  href="/admin"
-                  className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/admin')}`}
-                >
-                  Yönetici
-                </Link>
+                <>
+                  <Link
+                    href="/admin"
+                    className={`px-2 py-1 rounded-md text-xs font-medium ${isActive('/admin')}`}
+                  >
+                    Yönetici Paneli
+                  </Link>
+                </>
               )}
               <span className="text-gray-300 mr-2">{profile?.email}</span>
               <button

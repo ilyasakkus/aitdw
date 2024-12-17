@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function AdminPage() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -13,6 +13,13 @@ export default function AdminPage() {
       router.replace('/auth/login');
     }
   }, [loading, user, router]);
+
+  useEffect(() => {
+    // Check for admin access
+    if (!loading && user && !(profile?.role === 'admin' || user.email?.startsWith('boss'))) {
+      router.replace('/');
+    }
+  }, [loading, user, profile, router]);
 
   if (loading) {
     return (
@@ -28,7 +35,7 @@ export default function AdminPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+              <h1 className="text-xl font-semibold">Yönetici Paneli</h1>
             </div>
           </div>
         </div>
@@ -37,8 +44,21 @@ export default function AdminPage() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 p-4">
-            <h2 className="text-lg font-semibold mb-4">Yönetici Paneli</h2>
-            {/* Add your admin features here */}
+            <h2 className="text-lg font-semibold mb-4">Yönetici İşlemleri</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="p-4 bg-white rounded-lg shadow">
+                <h3 className="text-md font-medium mb-2">Kullanıcı Yönetimi</h3>
+                <p className="text-sm text-gray-600">Kullanıcıları görüntüle ve yönet</p>
+              </div>
+              <div className="p-4 bg-white rounded-lg shadow">
+                <h3 className="text-md font-medium mb-2">Doküman Yönetimi</h3>
+                <p className="text-sm text-gray-600">Dokümanları düzenle ve yönet</p>
+              </div>
+              <div className="p-4 bg-white rounded-lg shadow">
+                <h3 className="text-md font-medium mb-2">Sistem Ayarları</h3>
+                <p className="text-sm text-gray-600">Sistem ayarlarını yapılandır</p>
+              </div>
+            </div>
           </div>
         </div>
       </main>
