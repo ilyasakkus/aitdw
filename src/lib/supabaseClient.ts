@@ -15,12 +15,8 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     debug: process.env.NODE_ENV === 'development'
   },
   global: {
-    fetch: (...args) => {
-      const [url, config] = args;
-      return fetch(url, {
-        ...config,
-        credentials: 'include'
-      });
+    headers: {
+      'x-client-info': 'supabase-js-web'
     }
   }
 })
