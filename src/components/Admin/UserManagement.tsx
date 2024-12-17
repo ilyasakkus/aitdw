@@ -75,15 +75,14 @@ export default function UserManagement() {
         .from('profiles')
         .insert({
           id: authData.user.id,
-          email: formData.email,
-          role: 'writer'
+          role: 'user'
         });
 
       if (profileError) throw profileError;
 
-      setMessage({ type: 'success', text: 'Teknik yazar başarıyla oluşturuldu!' });
+      setMessage({ type: 'success', text: 'Kullanıcı başarıyla oluşturuldu!' });
       setFormData({ email: '', password: '', username: '', fullName: '', department: '' });
-      fetchUsers(); // Refresh user list
+      await fetchUsers(); // Refresh user list
     } catch (error: any) {
       console.error('Error creating user:', error);
       setMessage({ type: 'error', text: error.message });
