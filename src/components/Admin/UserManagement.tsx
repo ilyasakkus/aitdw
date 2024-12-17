@@ -94,7 +94,8 @@ export default function UserManagement() {
 
   const deleteUser = async (userId: string) => {
     if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) return;
-
+    
+    setLoading(true);
     try {
       const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
       if (authError) throw authError;
@@ -107,14 +108,17 @@ export default function UserManagement() {
       if (profileError) throw profileError;
 
       setMessage({ type: 'success', text: 'Kullanıcı başarıyla silindi!' });
-      fetchUsers(); // Refresh user list
+      await fetchUsers(); // Refresh user list
     } catch (error: any) {
       console.error('Error deleting user:', error);
       setMessage({ type: 'error', text: error.message });
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateUserRole = async (userId: string, newRole: 'admin' | 'writer') => {
+    setLoading(true);
     try {
       const { error } = await supabase
         .from('profiles')
@@ -124,9 +128,11 @@ export default function UserManagement() {
       if (error) throw error;
 
       setMessage({ type: 'success', text: 'Kullanıcı rolü güncellendi!' });
-      fetchUsers(); // Refresh user list
+      await fetchUsers(); // Refresh user list
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message });
+    } finally {
+      setLoading(false);
     }
   };
 
