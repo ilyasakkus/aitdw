@@ -91,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Admin durumunu localStorage'a kaydet
       localStorage.setItem('isAdmin', adminStatus ? 'true' : 'false');
 
+      // Admin kullanıcıları direkt admin paneline, normal kullanıcıları documents'a yönlendir
       return {
         isAdmin: adminStatus,
         redirectPath: adminStatus ? '/admin' : '/documents'
