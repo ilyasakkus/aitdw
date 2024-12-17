@@ -43,41 +43,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = async (userId: string, userEmail: string) => {
     try {
-      console.log('Fetching profile for user:', userId);
-      
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, role, email')
         .eq('id', userId)
         .single();
 
       if (profileError) {
-        console.error('Profile fetch error:', profileError);
-        if (profileError.code === 'PGRST116') {
-          console.log('Creating new profile for user:', userId);
-          const { data: newProfile, error: insertError } = await supabase
-            .from('profiles')
-            .insert([
-              { id: userId, role: 'user', email: userEmail }
-            ])
-            .select()
-            .single();
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert([
+            { 
+              id: userId, 
+              role: 'user', 
+              email: userEmail 
+            }
+          ])
+          .select('id, role, email')
+          .single();
 
-          if (insertError) {
-            console.error('Profile creation error:', insertError);
-            throw insertError;
-          }
-
-          console.log('New profile created:', newProfile);
-          return { role: 'user' as Role, email: userEmail };
+        if (insertError) {
+          throw insertError;
         }
-        throw profileError;
+
+        return { role: 'user' as Role, email: userEmail };
       }
 
-      console.log('Profile data fetched:', profileData);
-      return { role: profileData.role as Role, email: userEmail };
+      return { 
+        role: profileData.role as Role, 
+        email: profileData.email || userEmail 
+      };
     } catch (error) {
-      console.error('Profile fetch/create error:', error);
+      console.error('Profile error:', error);
       return { role: 'user' as Role, email: userEmail };
     }
   };
