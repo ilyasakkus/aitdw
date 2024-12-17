@@ -21,6 +21,12 @@ export default function UserManagement() {
 
   useEffect(() => {
     fetchUsers();
+    
+    // Cleanup function to reset loading state when component unmounts
+    return () => {
+      setLoading(false);
+      setMessage(null);
+    };
   }, []);
 
   const fetchUsers = async () => {
