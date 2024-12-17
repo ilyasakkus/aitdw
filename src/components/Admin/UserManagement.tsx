@@ -1,10 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { Database } from '@/types/database.types';
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 export default function UserManagement() {
   const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<(Profile & { email?: string })[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [formData, setFormData] = useState({
     email: '',
@@ -13,6 +17,35 @@ export default function UserManagement() {
     fullName: '',
     department: ''
   });
+  const [editingUser, setEditingUser] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*');
+
+      if (profilesError) throw profilesError;
+
+      // Fetch corresponding auth users to get emails
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) throw authError;
+
+      const usersWithEmail = profiles.map(profile => ({
+        ...profile,
+        email: authUsers.users.find(user => user.id === profile.user_id)?.email
+      }));
+
+      setUsers(usersWithEmail);
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message });
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -27,7 +60,6 @@ export default function UserManagement() {
     setMessage(null);
 
     try {
-      // Create user in auth.users
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: formData.email,
         password: formData.password,
@@ -35,10 +67,8 @@ export default function UserManagement() {
       });
 
       if (authError) throw authError;
-
       if (!authData.user) throw new Error('Kullanıcı oluşturulamadı');
 
-      // Create profile
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -53,6 +83,7 @@ export default function UserManagement() {
 
       setMessage({ type: 'success', text: 'Teknik yazar başarıyla oluşturuldu!' });
       setFormData({ email: '', username: '', password: '', fullName: '', department: '' });
+      fetchUsers(); // Refresh user list
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message });
     } finally {
@@ -60,8 +91,93 @@ export default function UserManagement() {
     }
   };
 
+  const deleteUser = async (userId: string) => {
+    if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) return;
+
+    try {
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      if (authError) throw authError;
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', userId);
+      
+      if (profileError) throw profileError;
+
+      setMessage({ type: 'success', text: 'Kullanıcı başarıyla silindi!' });
+      fetchUsers(); // Refresh user list
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message });
+    }
+  };
+
+  const updateUserRole = async (userId: string, newRole: 'admin' | 'writer') => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      setMessage({ type: 'success', text: 'Kullanıcı rolü güncellendi!' });
+      fetchUsers(); // Refresh user list
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message });
+    }
+  };
+
   return (
-    <div className="max-w-2xl mx-auto mt-8">
+    <div className="space-y-8">
+      {/* User List */}
+      <div className="bg-white shadow-md rounded-lg p-6">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Kullanıcı Listesi</h2>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kullanıcı</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {users.map((user) => (
+                <tr key={user.id}>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <div className="text-sm font-medium text-gray-900">{user.email}</div>
+                      <div className="text-sm text-gray-500">Role: {user.role}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <select
+                      value={user.role}
+                      onChange={(e) => updateUserRole(user.id, e.target.value as 'admin' | 'writer')}
+                      className="text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="writer">Yazar</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium">
+                    <button
+                      onClick={() => deleteUser(user.id)}
+                      className="text-red-600 hover:text-red-900 mr-4"
+                    >
+                      Sil
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Add User Form */}
       <div className="bg-white shadow-md rounded-lg p-6">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Yeni Teknik Yazar Ekle</h2>
         

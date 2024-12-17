@@ -2,11 +2,13 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import UserManagement from '@/components/Admin/UserManagement';
 
 export default function AdminPage() {
   const { isAdmin, loading } = useAuth();
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'users' | 'documents' | 'settings'>('users');
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -26,6 +28,27 @@ export default function AdminPage() {
     return null; // Router will redirect
   }
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'users':
+        return <UserManagement />;
+      case 'documents':
+        return (
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">Doküman Yönetimi</h2>
+            <p className="text-gray-600">Doküman yönetimi modülü yakında eklenecek...</p>
+          </div>
+        );
+      case 'settings':
+        return (
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">Sistem Ayarları</h2>
+            <p className="text-gray-600">Sistem ayarları modülü yakında eklenecek...</p>
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <nav className="bg-white shadow-lg">
@@ -40,23 +63,44 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 p-4">
-            <h2 className="text-lg font-semibold mb-4">Yönetici İşlemleri</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="p-4 bg-white rounded-lg shadow">
-                <h3 className="text-md font-medium mb-2">Kullanıcı Yönetimi</h3>
-                <p className="text-sm text-gray-600">Kullanıcıları görüntüle ve yönet</p>
-              </div>
-              <div className="p-4 bg-white rounded-lg shadow">
-                <h3 className="text-md font-medium mb-2">Doküman Yönetimi</h3>
-                <p className="text-sm text-gray-600">Dokümanları düzenle ve yönet</p>
-              </div>
-              <div className="p-4 bg-white rounded-lg shadow">
-                <h3 className="text-md font-medium mb-2">Sistem Ayarları</h3>
-                <p className="text-sm text-gray-600">Sistem ayarlarını yapılandır</p>
-              </div>
-            </div>
+          {/* Tab Navigation */}
+          <div className="border-b border-gray-200 mb-6">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`${
+                  activeTab === 'users'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap pb-4 px-1 border-b-2 font-medium`}
+              >
+                Kullanıcı Yönetimi
+              </button>
+              <button
+                onClick={() => setActiveTab('documents')}
+                className={`${
+                  activeTab === 'documents'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap pb-4 px-1 border-b-2 font-medium`}
+              >
+                Doküman Yönetimi
+              </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`${
+                  activeTab === 'settings'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap pb-4 px-1 border-b-2 font-medium`}
+              >
+                Sistem Ayarları
+              </button>
+            </nav>
           </div>
+
+          {/* Tab Content */}
+          {renderContent()}
         </div>
       </main>
     </div>
