@@ -1,9 +1,8 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Session } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -25,12 +24,18 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    // İlk render'da localStorage'dan admin durumunu al
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('isAdmin') === 'true';
+    }
+    return false;
+  });
+  
   const router = useRouter();
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
-    const supabase = createClientComponentClient();
-    
     // İlk yükleme için session kontrolü
     supabase.auth.getSession().then(({ data: { session } }) => {
       handleSession(session);
@@ -50,10 +55,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .single();
         
         setUser(session.user);
-        setIsAdmin(data?.role === 'admin');
+        const adminStatus = data?.role === 'admin';
+        setIsAdmin(adminStatus);
+        
+        // Admin durumunu localStorage'a kaydet
+        localStorage.setItem('isAdmin', adminStatus ? 'true' : 'false');
       } else {
         setUser(null);
         setIsAdmin(false);
+        localStorage.removeItem('isAdmin');
       }
       setLoading(false);
     }
@@ -62,7 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const supabase = createClientComponentClient();
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -71,17 +80,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      // Kullanıcı rolünü kontrol et
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)
         .single();
 
-      // Admin ve normal kullanıcı için farklı yönlendirme yolları döndür
+      const adminStatus = profile?.role === 'admin';
+      
+      // Admin durumunu localStorage'a kaydet
+      localStorage.setItem('isAdmin', adminStatus ? 'true' : 'false');
+
       return {
-        isAdmin: profile?.role === 'admin',
-        redirectPath: profile?.role === 'admin' ? '/admin' : '/documents'
+        isAdmin: adminStatus,
+        redirectPath: adminStatus ? '/admin' : '/documents'
       };
 
     } catch (error) {
@@ -91,9 +103,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    const supabase = createClientComponentClient();
     try {
       await supabase.auth.signOut();
+      localStorage.removeItem('isAdmin');
       router.push('/auth/login');
     } catch (error) {
       console.error('Logout error:', error);
