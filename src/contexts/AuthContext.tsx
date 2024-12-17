@@ -48,18 +48,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function handleSession(session: Session | null) {
       if (session?.user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        
-        setUser(session.user);
-        const adminStatus = data?.role === 'admin';
-        setIsAdmin(adminStatus);
-        
-        // Admin durumunu localStorage'a kaydet
-        localStorage.setItem('isAdmin', adminStatus ? 'true' : 'false');
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id, email, role')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            console.error('Profile fetch error:', profileError);
+            throw profileError;
+          }
+
+          if (!profile) {
+            console.error('No profile found');
+            throw new Error('Kullanıcı profili bulunamadı');
+          }
+
+          console.log('Profile data:', profile);
+          setUser(session.user);
+          const adminStatus = profile.role === 'admin';
+          console.log('Is admin?', adminStatus, 'Role:', profile.role);
+          setIsAdmin(adminStatus);
+          localStorage.setItem('isAdmin', adminStatus ? 'true' : 'false');
+        } catch (error) {
+          console.error('Session handling error:', error);
+          setUser(null);
+          setIsAdmin(false);
+          localStorage.removeItem('isAdmin');
+        }
       } else {
         setUser(null);
         setIsAdmin(false);
@@ -80,18 +97,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      const { data: profile } = await supabase
+      console.log('Auth data:', data);
+
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
+        .select('id, email, role')
         .eq('id', data.user.id)
         .single();
 
-      const adminStatus = profile?.role === 'admin';
-      
-      // Admin durumunu localStorage'a kaydet
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        throw new Error('Profil bilgileri alınamadı');
+      }
+
+      if (!profile) {
+        console.error('No profile found');
+        throw new Error('Kullanıcı profili bulunamadı');
+      }
+
+      console.log('Profile data:', profile);
+      const adminStatus = profile.role === 'admin';
+      console.log('Is admin?', adminStatus, 'Role:', profile.role);
+
       localStorage.setItem('isAdmin', adminStatus ? 'true' : 'false');
 
-      // Admin kullanıcıları direkt admin paneline, normal kullanıcıları documents'a yönlendir
       return {
         isAdmin: adminStatus,
         redirectPath: adminStatus ? '/admin' : '/documents'
