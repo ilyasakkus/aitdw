@@ -101,37 +101,42 @@ export default function DocumentLayout({ title, category, defaultXML }: Document
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      {/* Compact Header */}
-      <div className="bg-white shadow-sm h-12 flex items-center px-4 justify-between">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-lg font-medium">{title}</h1>
-          <span className="text-sm text-gray-500">{category}</span>
+    <div className="min-h-screen bg-gray-50 pt-12">
+      {/* Title Bar */}
+      <div className="bg-white border-b border-gray-200 sticky top-12 z-50">
+        <div className="px-4 py-2">
+          <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
+          <p className="text-sm text-gray-500">{category}</p>
         </div>
-        <div className="flex items-center space-x-2">
+        
+        {/* Tab buttons */}
+        <div className="px-4 pb-2 flex space-x-2">
           <button
             onClick={() => setActiveTab('visual')}
-            className={`px-3 py-1 text-sm rounded ${
-              activeTab === 'visual' ? 'bg-blue-100 text-blue-700' : 'text-gray-600'
+            className={`px-3 py-1 text-sm rounded-md ${
+              activeTab === 'visual'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             Visual Editor
           </button>
           <button
             onClick={() => setActiveTab('xml')}
-            className={`px-3 py-1 text-sm rounded ${
-              activeTab === 'xml' ? 'bg-blue-100 text-blue-700' : 'text-gray-600'
+            className={`px-3 py-1 text-sm rounded-md ${
+              activeTab === 'xml'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            XML
+            XML Editor
           </button>
           <button
-            onClick={() => {
-              setActiveTab('preview');
-              handleGeneratePDF();
-            }}
-            className={`px-3 py-1 text-sm rounded ${
-              activeTab === 'preview' ? 'bg-blue-100 text-blue-700' : 'text-gray-600'
+            onClick={() => setActiveTab('preview')}
+            className={`px-3 py-1 text-sm rounded-md ${
+              activeTab === 'preview'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             Preview
@@ -139,8 +144,8 @@ export default function DocumentLayout({ title, category, defaultXML }: Document
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden">
+      {/* Main content area */}
+      <div className="flex-1 p-4">
         {activeTab === 'visual' && (
           <div className="h-full">
             <S1000DVisualEditor value={content} onChange={handleContentChange} />
