@@ -13,10 +13,14 @@ const AdminGuard = ({ children }: AdminGuardProps) => {
   const { user, loading, isAdmin } = useAuth();
 
   useEffect(() => {
-    if (!loading && !isAdmin) {
-      router.replace('/documents');
+    if (!loading) {
+      if (!user) {
+        router.replace('/auth/login');
+      } else if (!isAdmin) {
+        router.replace('/documents');
+      }
     }
-  }, [isAdmin, loading, router]);
+  }, [loading, user, isAdmin, router]);
 
   if (loading) {
     return (
