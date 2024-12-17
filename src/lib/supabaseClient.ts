@@ -8,13 +8,13 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false,
-    flowType: 'pkce',
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    storageKey: 'app-auth-token',
-    debug: process.env.NODE_ENV === 'development'
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   },
   global: {
+    fetch: (...args) => {
+      return fetch(...args)
+    },
     headers: {
       'x-client-info': 'supabase-js-web'
     }
