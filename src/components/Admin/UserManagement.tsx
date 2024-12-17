@@ -54,8 +54,8 @@ export default function UserManagement() {
 
       const usersWithEmail = profiles.map(profile => ({
         ...profile,
-        email: authUsers.find(user => user.id === profile.id)?.email,
-        username: authUsers.find(user => user.id === profile.id)?.user_metadata?.username || ''
+        email: authUsers.find(user => user.id === profile.user_id)?.email,
+        username: authUsers.find(user => user.id === profile.user_id)?.user_metadata?.username || ''
       }));
 
       setUsers(usersWithEmail);
@@ -92,7 +92,7 @@ export default function UserManagement() {
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .insert({
-          id: authData.user.id,
+          user_id: authData.user.id,
           role: 'user'
         });
 
@@ -120,7 +120,7 @@ export default function UserManagement() {
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
-        .eq('id', userId);
+        .eq('user_id', userId);
       
       if (profileError) throw profileError;
 
