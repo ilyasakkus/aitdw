@@ -71,7 +71,7 @@ export default function UserManagement() {
       if (authError) throw authError;
       if (!authData.user) throw new Error('Kullanıcı oluşturulamadı');
 
-      const { error: profileError } = await supabase
+      const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .insert({
           id: authData.user.id,
