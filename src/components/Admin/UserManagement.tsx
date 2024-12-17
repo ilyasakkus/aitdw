@@ -10,7 +10,7 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 
 export default function UserManagement() {
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<(Profile & { email?: string, username?: string })[]>([]);
+  const [users, setUsers] = useState<(Profile & { email?: string, username?: string, user_id: string })[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [formData, setFormData] = useState({
     email: '',
@@ -51,6 +51,9 @@ export default function UserManagement() {
       const { data: { users: authUsers }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
       
       if (authError) throw authError;
+
+      console.log('Auth Users:', authUsers.map(u => ({ id: u.id, email: u.email })));
+      console.log('Profiles:', profiles.map(p => ({ user_id: p.user_id })));
 
       const usersWithEmail = profiles.map(profile => ({
         ...profile,
@@ -114,11 +117,25 @@ export default function UserManagement() {
     
     setLoading(true);
     try {
-      // First delete from auth
+      console.log('Attempting to delete user with ID:', userId);
+      
+      // First check if user exists
+      const { data: { users }, error: fetchError } = await supabaseAdmin.auth.admin.listUsers();
+      const userExists = users.some(user => user.id === userId);
+      
+      if (!userExists) {
+        throw new Error('Kullanıcı bulunamadı. ID: ' + userId);
+      }
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      // Delete from auth
       const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
       if (authError) throw authError;
 
-      // Then delete from profiles table
+      // Delete from profiles
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .delete()
@@ -177,9 +194,10 @@ export default function UserManagement() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {users.map((user) => (
-                <tr key={user.id}>
+                <tr key={user.user_id}>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900">{user.email}</div>
+                    <div className="text-xs text-gray-500">ID: {user.user_id}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900">{user.username || '-'}</div>
@@ -187,7 +205,7 @@ export default function UserManagement() {
                   <td className="px-6 py-4">
                     <select
                       value={user.role}
-                      onChange={(e) => updateUserRole(user.id, e.target.value as 'admin' | 'writer')}
+                      onChange={(e) => updateUserRole(user.user_id, e.target.value as 'admin' | 'writer')}
                       className="text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       <option value="writer">Yazar</option>
@@ -196,7 +214,7 @@ export default function UserManagement() {
                   </td>
                   <td className="px-6 py-4 text-sm font-medium">
                     <button
-                      onClick={() => deleteUser(user.id)}
+                      onClick={() => deleteUser(user.user_id)}
                       className="text-red-600 hover:text-red-900 mr-4"
                     >
                       Sil
