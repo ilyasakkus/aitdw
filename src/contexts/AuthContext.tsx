@@ -73,7 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (mounted.current) {
         setProfile(profileData);
-        setIsAdmin(profileData.role === 'admin');
+        const isAdminUser = profileData.role === 'admin';
+        setIsAdmin(isAdminUser);
+        console.log('User role:', profileData.role, 'isAdmin:', isAdminUser); // Debug için
       }
     } catch (error) {
       console.error('Session update error:', error);
@@ -91,25 +93,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initAuth = async () => {
       try {
+        if (!mounted.current) return;
         setLoading(true);
 
-        // Basit timeout kontrolü
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_DURATION);
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
-        try {
-          const { data, error } = await supabase.auth.getSession();
-          clearTimeout(timeoutId);
+        if (sessionError) throw sessionError;
+        if (!mounted.current) return;
 
-          if (!mounted.current) return;
-          if (error) throw error;
-
-          await updateUserSession(data.session?.user || null);
-        } catch (error) {
-          if (error instanceof DOMException && error.name === 'AbortError') {
-            throw new Error('Auth initialization timeout');
-          }
-          throw error;
+        if (sessionData.session?.user) {
+          await updateUserSession(sessionData.session.user);
+        } else {
+          setUser(null);
+          setProfile(null);
+          setIsAdmin(false);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -184,7 +181,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         await updateUserSession(data.user);
         
-        if (isAdmin) {
+        const profileData = await fetchUserProfile(data.user.id, data.user.email || '');
+        const isAdminUser = profileData.role === 'admin';
+        
+        if (isAdminUser) {
           router.push('/admin');
         } else {
           router.push('/documents');
