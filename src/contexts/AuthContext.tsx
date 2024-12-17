@@ -184,53 +184,75 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('Starting sign in process...');
       setLoading(true);
       setAuthError(null);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // 1. Önce auth işlemini yap
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        console.error('Sign in error:', error);
-        throw error;
+      if (authError) {
+        console.error('Auth error:', authError);
+        setAuthError(authError.message);
+        return;
       }
 
-      console.log('Auth successful, user:', data.user?.id);
+      if (!authData.user) {
+        setAuthError('Kullanıcı bilgileri alınamadı');
+        return;
+      }
 
-      if (data.user) {
-        try {
-          const profileData = await fetchUserProfile(data.user.id, data.user.email || '');
-          console.log('Profile data fetched:', profileData);
+      // 2. Profil bilgilerini al
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', authData.user.id)
+        .single();
 
-          setUser(data.user);
-          setProfile(profileData);
-          setIsAdmin(profileData.role === 'admin');
+      if (profileError) {
+        console.error('Profile error:', profileError);
+        // Profil bulunamazsa oluştur
+        if (profileError.code === 'PGRST116') {
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([
+              { id: authData.user.id, role: 'user', email: authData.user.email }
+            ])
+            .select()
+            .single();
 
-          await new Promise(resolve => setTimeout(resolve, 100));
-
-          if (profileData.role === 'admin') {
-            console.log('Redirecting to admin...');
-            await router.push('/admin');
-          } else {
-            console.log('Redirecting to documents...');
-            await router.push('/documents');
+          if (createError) {
+            console.error('Profile creation error:', createError);
+            setAuthError('Profil oluşturulamadı');
+            return;
           }
-        } catch (profileError) {
-          console.error('Profile processing error:', profileError);
+
+          // Yeni profili kullan
+          setUser(authData.user);
+          setProfile({ role: 'user', email: authData.user.email || '' });
+          setIsAdmin(false);
+        } else {
           setAuthError('Profil bilgileri alınamadı');
-          throw profileError;
+          return;
         }
+      } else {
+        // Mevcut profili kullan
+        setUser(authData.user);
+        setProfile({ role: profileData.role, email: authData.user.email || '' });
+        setIsAdmin(profileData.role === 'admin');
       }
+
+      // 3. Yönlendirme yap
+      const redirectPath = profileData?.role === 'admin' ? '/admin' : '/documents';
+      router.push(redirectPath);
+
     } catch (error) {
-      console.error('Sign in process error:', error);
-      setAuthError(error instanceof Error ? error.message : 'Giriş başarısız');
-      throw error;
+      console.error('Sign in error:', error);
+      setAuthError('Giriş işlemi başarısız oldu');
     } finally {
       setLoading(false);
-      console.log('Sign in process completed');
     }
   };
 

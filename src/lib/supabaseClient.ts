@@ -9,15 +9,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
-  },
-  global: {
-    fetch: (...args) => {
-      return fetch(...args)
-    },
-    headers: {
-      'x-client-info': 'supabase-js-web'
-    }
+    flowType: 'implicit'
   }
 })
 
