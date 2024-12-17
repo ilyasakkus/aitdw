@@ -10,7 +10,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ isAdmin: boolean; redirectPath: string }>;
   signOut: () => Promise<void>;
 }
 
@@ -18,7 +18,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   isAdmin: false,
-  signIn: async () => {},
+  signIn: async () => ({ isAdmin: false, redirectPath: '/' }),
   signOut: async () => {}
 });
 
@@ -71,7 +71,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      // Session otomatik olarak güncellenir ve useEffect tetiklenir
+      // Kullanıcı rolünü kontrol et
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      // Admin ve normal kullanıcı için farklı yönlendirme yolları döndür
+      return {
+        isAdmin: profile?.role === 'admin',
+        redirectPath: profile?.role === 'admin' ? '/admin' : '/documents'
+      };
+
     } catch (error) {
       console.error('Login error:', error);
       throw error;

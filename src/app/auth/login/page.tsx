@@ -18,8 +18,8 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await signIn(email, password);
-      router.push('/admin');
+      const { redirectPath } = await signIn(email, password);
+      router.push(redirectPath);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Giriş başarısız');
     } finally {
