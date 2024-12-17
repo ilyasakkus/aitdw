@@ -52,7 +52,7 @@ export default function DocumentSidebar({ chapters, onSelectNode }: DocumentSide
   const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <div className={`h-full bg-white border-r border-gray-200 transition-all duration-300 
+    <div className={`bg-white border-r border-gray-200 transition-all duration-300 h-full
       ${isOpen ? 'w-64' : 'w-8'}`}>
       <div className="h-full flex flex-col">
         <div

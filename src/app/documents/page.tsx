@@ -90,15 +90,17 @@ export default function Documents() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 pt-6">
       {/* Sidebar */}
-      <DocumentSidebar
-        chapters={chapters}
-        onSelectNode={handleNodeSelect}
-      />
+      <div className="h-[calc(100vh-1.5rem)]">
+        <DocumentSidebar
+          chapters={chapters}
+          onSelectNode={handleNodeSelect}
+        />
+      </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden h-[calc(100vh-1.5rem)]">
         {/* Title and Tabs */}
         <div className="bg-white border-b border-gray-200">
           <div className="px-4 py-2">
