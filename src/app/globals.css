@@ -2,15 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-  }
+:root {
+  --foreground: #000000;
+  --background: #ffffff;
 }
 
-@layer base {
-  body {
-    @apply bg-background text-foreground;
-  }
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/* TipTap Editor Styles */
+.ProseMirror {
+  @apply min-h-[200px] p-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.ProseMirror p {
+  @apply mb-4;
+}
+
+.ProseMirror img {
+  @apply max-w-full h-auto;
 }
