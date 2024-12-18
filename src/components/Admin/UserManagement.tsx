@@ -5,8 +5,8 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 interface User {
   id: string;
-  email: string;
-  role: string;
+  email: string | null;
+  role: string | null;
   created_at: string;
 }
 
@@ -20,25 +20,40 @@ export default function UserManagement() {
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    fetchUsers();
+    let isMounted = true;
+
+    const loadUsers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, email, role, created_at');
+
+        if (!isMounted) return;
+
+        if (error) {
+          console.error('Error:', error);
+          setError('Kullanıcılar yüklenirken bir hata oluştu');
+          return;
+        }
+
+        setUsers(data || []);
+      } catch (error) {
+        if (!isMounted) return;
+        console.error('Error:', error);
+        setError('Kullanıcılar yüklenirken bir hata oluştu');
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadUsers();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
-
-  const fetchUsers = async () => {
-    try {
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (profilesError) throw profilesError;
-      setUsers(profilesData || []);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      setError('Kullanıcılar yüklenirken bir hata oluştu');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
